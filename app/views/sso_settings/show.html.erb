@@ -1,0 +1,36 @@
+<div class="flex flex-wrap space-y-4 md:flex-nowrap md:space-y-0">
+  <%= render 'shared/settings_nav' %>
+  <div class="flex-grow max-w-xl mx-auto">
+    <h1 class="text-4xl font-bold mb-4">Google Workspace SSO</h1>
+    <%= form_with url: settings_sso_path, method: :patch, local: true, class: 'space-y-4' do |f| %>
+      <% config = @account_config.value.to_h %>
+      <div class="form-control">
+        <%= f.label :enabled, t('enabled'), class: 'label' %>
+        <%= f.select :enabled, options_for_select([[t('enabled'), true], [t('disabled'), false]], config['enabled']), {}, name: 'google_oidc[enabled]', class: 'base-select' %>
+      </div>
+      <div class="form-control">
+        <label class="label">Hosted domains</label>
+        <%= text_area_tag 'google_oidc[hosted_domains]', Array(config['hosted_domains']).join("\n"), class: 'base-input min-h-28', placeholder: "example.com\nsubsidiary.com" %>
+      </div>
+      <div class="form-control">
+        <label class="label">Allowed admin emails</label>
+        <%= text_area_tag 'google_oidc[allowed_admin_emails]', Array(config['allowed_admin_emails']).join("\n"), class: 'base-input min-h-28', placeholder: "admin@example.com\nowner@example.com" %>
+      </div>
+      <div class="form-control">
+        <%= f.label :auto_provision, 'Auto-provision matched admins', class: 'label' %>
+        <%= f.select :auto_provision, options_for_select([[t('enabled'), true], [t('disabled'), false]], config['auto_provision']), {}, name: 'google_oidc[auto_provision]', class: 'base-select' %>
+      </div>
+      <div class="alert">
+        <%= svg_icon('info_circle', class: 'w-6 h-6') %>
+        <div>
+          <p class="font-bold">Environment prerequisites</p>
+          <p class="text-gray-700">Set <code>GOOGLE_OAUTH_CLIENT_ID</code> and <code>GOOGLE_OAUTH_CLIENT_SECRET</code> in the app environment before enabling Google Workspace sign-in.</p>
+        </div>
+      </div>
+      <div class="form-control pt-2">
+        <%= f.button button_title(title: t('update')), class: 'base-button' %>
+      </div>
+    <% end %>
+  </div>
+  <div class="w-0 md:w-52"></div>
+</div>

@@ -16,8 +16,16 @@ class ApplicationController < ActionController::Base
   before_action :set_csp, if: -> { request.get? && !request.headers['HTTP_X_TURBO'] }
 
   helper_method :button_title,
+                :accessible_accounts,
+                :admin_managed_accounts,
                 :current_account,
+                :current_account_access,
                 :true_ability,
+                :branding_account,
+                :branding_name,
+                :branding_primary_color,
+                :branding_secondary_color,
+                :branding_support_email,
                 :form_link_host,
                 :svg_icon
 
@@ -96,15 +104,79 @@ class ApplicationController < ActionController::Base
   end
 
   def current_account
-    current_user&.account
+    return unless current_user
+
+    @current_account ||= resolve_current_account
+  end
+
+  def current_account_access
+    return unless current_user && current_account
+
+    @current_account_access ||= current_user.account_access_for(current_account)
+  end
+
+  def current_ability
+    @current_ability ||= Ability.new(current_user, current_account:)
+  end
+
+  def accessible_accounts
+    return Account.none unless current_user
+
+    @accessible_accounts ||= current_user.accessible_accounts
+  end
+
+  def admin_managed_accounts
+    return Account.none unless current_user
+
+    @admin_managed_accounts ||= current_user.admin_managed_accounts
+  end
+
+  def branding_account
+    return current_account if current_account
+    return @account if defined?(@account) && @account.present?
+    return @division if defined?(@division) && @division.present?
+    return @submitter.account if defined?(@submitter) && @submitter.present?
+    return @submission.account if defined?(@submission) && @submission.present?
+    return @template.account if defined?(@template) && @template.present?
+
+    account_id = params[:account_id].presence || params[:division_id].presence
+
+    Account.find_by(id: account_id) if account_id.present?
+  end
+
+  def branding_name
+    branding_account&.branded_name || Docuseal.product_name
+  end
+
+  def branding_primary_color
+    branding_account&.primary_color || Docuseal::DEFAULT_PRIMARY_COLOR
+  end
+
+  def branding_secondary_color
+    branding_account&.secondary_color || Docuseal::DEFAULT_SECONDARY_COLOR
+  end
+
+  def branding_support_email
+    branding_account&.support_email || Docuseal::SUPPORT_EMAIL
   end
 
   def true_ability
-    @true_ability ||= Ability.new(true_user)
+    @true_ability ||= Ability.new(true_user, current_account:)
   end
 
   def maybe_redirect_to_setup
     redirect_to setup_index_path unless User.exists?
+  end
+
+  def select_current_account!(account)
+    raise CanCan::AccessDenied unless current_user&.can_access_account?(account)
+
+    session[:selected_account_id] = account.id
+    current_user.update_column(:account_id, account.id) if current_user.account_id != account.id
+    current_user.account = account
+    @current_account = account
+    @current_account_access = nil
+    @current_ability = nil
   end
 
   def button_title(title: I18n.t('submit'), disabled_with: I18n.t('submitting'), title_class: '', icon: nil,
@@ -142,5 +214,21 @@ class ApplicationController < ActionController::Base
 
       policy.directives['connect-src'] << 'ws:' if Rails.env.development?
     end
+  end
+
+  def resolve_current_account
+    if current_user.platform_admin?
+      Account.active.find_by(id: selected_account_id) ||
+        Account.active.find_by(id: current_user.account_id) ||
+        Account.active.order(:name).first
+    else
+      current_user.accessible_accounts.find_by(id: selected_account_id) ||
+        current_user.accessible_accounts.find_by(id: current_user.account_id) ||
+        current_user.accessible_accounts.first
+    end
+  end
+
+  def selected_account_id
+    session[:selected_account_id].presence
   end
 end

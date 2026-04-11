@@ -1,4 +1,4 @@
 <title>
-  <%= content_for(:html_title) || (signed_in? ? 'DocuSeal' : 'DocuSeal | Open Source Document Signing') %>
+  <%= content_for(:html_title) || (signed_in? ? branding_name : "#{branding_name} | Document Signing") %>
 </title>
 <%= render 'shared/meta' %>

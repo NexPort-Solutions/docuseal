@@ -1,22 +1,21 @@
 # frozen_string_literal: true
 
 class UsersController < ApplicationController
-  load_and_authorize_resource :user, only: %i[index edit update destroy]
-
+  before_action :ensure_manage_current_account!
+  before_action :load_user, only: %i[edit update destroy]
   before_action :build_user, only: %i[new create]
-  authorize_resource :user, only: %i[new create]
 
   def index
     @users =
       if params[:status] == 'archived'
-        @users.archived.where.not(role: 'integration')
+        current_account.members.archived.where.not(role: 'integration')
       elsif params[:status] == 'integration'
-        @users.active.where(role: 'integration')
+        current_account.members.active.where(role: 'integration')
       else
-        @users.active.where.not(role: 'integration')
+        current_account.members.active.where.not(role: 'integration')
       end
 
-    @pagy, @users = pagy(@users.preload(account: :account_accesses).where(account: current_account).order(id: :desc))
+    @pagy, @users = pagy(@users.preload(:account_accesses).distinct.order(id: :desc))
   end
 
   def new; end
@@ -24,26 +23,25 @@ class UsersController < ApplicationController
   def edit; end
 
   def create
-    existing_user = User.accessible_by(current_ability).find_by(email: @user.email)
+    existing_user = User.find_by(email: @user.email)
 
     if existing_user
-      if existing_user.archived_at? &&
-         current_ability.can?(:manage, existing_user) && current_ability.can?(:manage, @user.account)
-        existing_user.assign_attributes(@user.slice(:first_name, :last_name, :role, :account_id))
-        existing_user.archived_at = nil
-        @user = existing_user
-      else
+      if existing_user.can_access_account?(current_account)
         @user.errors.add(:email, I18n.t('already_exists'))
 
         return render turbo_stream: turbo_stream.replace(:modal, template: 'users/new'), status: :unprocessable_content
       end
+
+      existing_user.archived_at = nil
+      @user = existing_user
     end
 
     @user.password = SecureRandom.hex if @user.password.blank?
     @user.role = User::ADMIN_ROLE unless role_valid?(@user.role)
 
     if @user.save
-      UserMailer.invitation_email(@user).deliver_later!
+      upsert_membership!(@user)
+      UserMailer.invitation_email(@user, account: current_account).deliver_later!
 
       redirect_back fallback_location: settings_users_path, notice: I18n.t('user_has_been_invited')
     else
@@ -55,17 +53,11 @@ class UsersController < ApplicationController
     return redirect_to settings_users_path, notice: I18n.t('unable_to_update_user') if Docuseal.demo?
 
     attrs = user_params.compact_blank
-    attrs = attrs.merge(user_params.slice(:archived_at)) if current_ability.can?(:create, @user)
-
-    if params.dig(:user, :account_id).present?
-      account = Account.accessible_by(current_ability).find(params.dig(:user, :account_id))
-
-      authorize!(:manage, account)
-
-      @user.account = account
-    end
+    attrs = attrs.merge(user_params.slice(:archived_at))
 
     if @user.update(attrs.except(*(current_user == @user ? %i[password otp_required_for_login role] : %i[password])))
+      upsert_membership!(@user) if params.dig(:user, :membership_role).present?
+
       if @user.try(:pending_reconfirmation?) && @user.previous_changes.key?(:unconfirmed_email)
         SendConfirmationInstructionsJob.perform_async('user_id' => @user.id)
 
@@ -84,7 +76,8 @@ class UsersController < ApplicationController
       return redirect_to settings_users_path, notice: I18n.t('unable_to_remove_user')
     end
 
-    @user.update!(archived_at: Time.current)
+    @user.account_accesses.find_by!(account: current_account).destroy!
+    @user.sync_membership_state!
 
     redirect_back fallback_location: settings_users_path, notice: I18n.t('user_has_been_removed')
   end
@@ -92,16 +85,19 @@ class UsersController < ApplicationController
   private
 
   def role_valid?(role)
-    User::ROLES.include?(role)
+    return false unless User::ROLES.include?(role)
+    return true if role != User::PLATFORM_ADMIN_ROLE
+
+    current_user&.platform_admin?
   end
 
   def build_user
-    @user = current_account.users.new(user_params)
+    @user = current_account.users.new(user_params.except(:membership_role))
   end
 
   def user_params
     if params.key?(:user)
-      permitted_params = %i[email first_name last_name password archived_at otp_required_for_login]
+      permitted_params = %i[email first_name last_name password archived_at otp_required_for_login membership_role]
 
       permitted_params << :role if role_valid?(params.dig(:user, :role))
 
@@ -109,5 +105,24 @@ class UsersController < ApplicationController
     else
       {}
     end
+  end
+
+  def load_user
+    @user = current_account.members.find(params[:id])
+  end
+
+  def ensure_manage_current_account!
+    authorize!(:manage, current_account)
+  end
+
+  def upsert_membership!(user)
+    membership = user.account_accesses.find_or_initialize_by(account: current_account)
+    membership.role = membership_role
+    membership.save!
+    user.sync_membership_state!
+  end
+
+  def membership_role
+    params.dig(:user, :membership_role).presence_in(AccountAccess::ROLES) || AccountAccess::CONTRIBUTOR_ROLE
   end
 end

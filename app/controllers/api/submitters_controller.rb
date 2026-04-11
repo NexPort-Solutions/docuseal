@@ -5,7 +5,7 @@ module Api
     load_and_authorize_resource :submitter
 
     def index
-      submitters = Submitters.search(current_user, @submitters, params[:q])
+      submitters = Submitters.search(current_user, current_account, @submitters, params[:q])
 
       submitters = filter_submitters(submitters, params)
 
@@ -36,6 +36,11 @@ module Api
 
     # rubocop:disable Metrics/MethodLength
     def update
+      if params[:send_sms].in?(['true', true, '1']) || params.dig(:submitter, :send_sms).in?(['true', true, '1'])
+        return render json: { error: I18n.t('sms_delivery_is_not_enabled_for_this_deployment') },
+                      status: :unprocessable_content
+      end
+
       if @submitter.completed_at?
         return render json: { error: 'Submitter has already completed the submission.' }, status: :unprocessable_content
       end

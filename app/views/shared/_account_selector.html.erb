@@ -1,0 +1,30 @@
+<% return unless signed_in? && accessible_accounts.many? %>
+
+<div class="dropdown dropdown-end">
+  <label tabindex="0" class="btn btn-outline btn-sm gap-2 normal-case">
+    <%= svg_icon('folder', class: 'w-4 h-4') %>
+    <span class="max-w-44 truncate"><%= current_account&.branded_name || t('accounts') %></span>
+  </label>
+  <ul tabindex="0" class="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-72">
+    <li class="menu-title"><span><%= t('accounts') %></span></li>
+    <% accessible_accounts.each do |account| %>
+      <li>
+        <%= button_to select_account_path(account),
+                      method: :post,
+                      params: { redirect_to: request.fullpath },
+                      class: 'text-left w-full px-4 py-2 hover:bg-base-200 rounded-lg flex flex-col items-start' do %>
+          <span class="font-medium"><%= account.branded_name %></span>
+          <span class="text-xs opacity-70"><%= t(current_user.membership_role_for(account) || 'platform_admin') %></span>
+        <% end %>
+      </li>
+    <% end %>
+    <li class="border-t border-base-300 mt-2 pt-2">
+      <%= button_to select_account_path(current_account || accessible_accounts.first),
+                    method: :post,
+                    params: { redirect_to: root_path },
+                    class: 'text-left w-full px-4 py-2 hover:bg-base-200 rounded-lg' do %>
+        <%= t('view_all_accounts') %>
+      <% end %>
+    </li>
+  </ul>
+</div>

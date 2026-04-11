@@ -71,8 +71,11 @@
               </td>
               <td>
                 <span class="badge badge-info badge-outline whitespace-nowrap">
-                  <%= t(user.role) %>
+                  <%= t(user.account_access_for(current_account)&.role || user.role) %>
                 </span>
+                <% if user.platform_admin? %>
+                  <span class="badge badge-outline whitespace-nowrap mt-1"><%= t('platform_admin') %></span>
+                <% end %>
               </td>
               <td>
                 <%= user.current_sign_in_at ? l(user.current_sign_in_at.in_time_zone(current_account.timezone), format: :short, locale: current_account.locale) : '-' %>

@@ -21,21 +21,21 @@ module Submissions
 
     module_function
 
-    def call(submissions, current_user, params)
-      filters = normalize_filter_params(params, current_user)
+    def call(submissions, current_user, current_account, params)
+      filters = normalize_filter_params(params, current_account)
 
-      submissions = filter_by_author(submissions, filters, current_user)
-      submissions = filter_by_folder(submissions, filters, current_user)
+      submissions = filter_by_author(submissions, filters, current_account)
+      submissions = filter_by_folder(submissions, filters, current_account)
       submissions = filter_by_status(submissions, filters)
       submissions = filter_by_created_at(submissions, filters)
 
       filter_by_completed_at(submissions, filters)
     end
 
-    def filter_by_author(submissions, filters, current_user)
+    def filter_by_author(submissions, filters, current_account)
       return submissions if filters[:author].blank?
 
-      user = current_user.account.users.find_by(email: filters[:author])
+      user = current_account.members.find_by(email: filters[:author])
 
       submissions.where(created_by_user_id: user&.id || -1)
     end
@@ -90,11 +90,11 @@ module Submissions
       submissions
     end
 
-    def filter_by_folder(submissions, filters, current_user)
+    def filter_by_folder(submissions, filters, current_account)
       return submissions if filters[:folder].blank?
 
       folders =
-        TemplateFolders.filter_by_full_name(current_user.account.template_folders, filters[:folder])
+        TemplateFolders.filter_by_full_name(current_account.template_folders, filters[:folder])
 
       folders += folders.preload(:subfolders).flat_map(&:subfolders)
 
@@ -116,8 +116,8 @@ module Submissions
       submissions.having(completed_arel.lteq(filters[:completed_at_to].end_of_day))
     end
 
-    def normalize_filter_params(params, current_user)
-      tz = ActiveSupport::TimeZone[current_user.account.timezone] || Time.zone
+    def normalize_filter_params(params, current_account)
+      tz = ActiveSupport::TimeZone[current_account.timezone] || Time.zone
 
       ALLOWED_PARAMS.each_with_object({}) do |key, acc|
         next if params[key].blank?

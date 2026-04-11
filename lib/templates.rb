@@ -41,9 +41,9 @@ module Templates
     nil
   end
 
-  def search(current_user, templates, keyword)
+  def search(current_user, current_account, templates, keyword)
     if Docuseal.fulltext_search?
-      fulltext_search(current_user, templates, keyword)
+      fulltext_search(current_user, current_account, templates, keyword)
     else
       plain_search(templates, keyword)
     end
@@ -57,13 +57,13 @@ module Templates
     templates.where(Template.arel_table[:name].lower.matches("%#{sanitized}%"))
   end
 
-  def fulltext_search(current_user, templates, keyword)
+  def fulltext_search(_current_user, current_account, templates, keyword)
     return templates if keyword.blank?
 
     templates.where(
       id: SearchEntry.where(record_type: 'Template')
-                     .where(account_id: [current_user.account_id,
-                                         current_user.account.linked_account_account&.account_id].compact)
+                     .where(account_id: [current_account.id,
+                                         current_account.linked_account_account&.account_id].compact)
                      .where(*SearchEntries.build_tsquery(keyword))
                      .select(:record_id)
     )

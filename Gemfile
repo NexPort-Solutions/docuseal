@@ -14,6 +14,7 @@ gem 'csv', require: false
 gem 'csv-safe', require: false
 gem 'devise'
 gem 'devise-two-factor'
+gem 'omniauth-google-oauth2'
 gem 'dotenv', require: false
 gem 'email_typo'
 gem 'faraday'

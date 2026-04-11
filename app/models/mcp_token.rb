@@ -18,10 +18,6 @@
 #  index_mcp_tokens_on_sha256   (sha256) UNIQUE
 #  index_mcp_tokens_on_user_id  (user_id)
 #
-# Foreign Keys
-#
-#  fk_rails_...  (user_id => users.id)
-#
 class McpToken < ApplicationRecord
   TOKEN_LENGTH = 43
 

@@ -14,8 +14,9 @@ Rails.application.routes.draw do
   get 'up' => 'rails/health#show'
   get 'manifest' => 'pwa#manifest'
 
-  devise_for :users, path: '/', only: %i[sessions passwords],
-                     controllers: { sessions: 'sessions', passwords: 'passwords' }
+  devise_for :users, path: '/', only: %i[sessions passwords omniauth_callbacks],
+                     controllers: { sessions: 'sessions', passwords: 'passwords',
+                                    omniauth_callbacks: 'users/omniauth_callbacks' }
 
   devise_scope :user do
     resource :invitation, only: %i[update] do
@@ -64,6 +65,7 @@ Rails.application.routes.draw do
   resources :users, only: %i[new create edit update destroy] do
     resource :send_reset_password, only: %i[update], controller: 'users_send_reset_password'
   end
+  post '/accounts/:account_id/select', to: 'account_selections#create', as: :select_account
   resource :user_signature, only: %i[edit update destroy]
   resource :user_initials, only: %i[edit update destroy]
   resources :submissions_archived, only: %i[index], path: 'submissions/archived'
@@ -175,7 +177,7 @@ Rails.application.routes.draw do
       resource :reveal_access_token, only: %i[show create], controller: 'reveal_access_token'
     end
     resources :email, only: %i[index create], controller: 'email_smtp_settings'
-    resources :sso, only: %i[index], controller: 'sso_settings'
+    resource :sso, only: %i[show update], controller: 'sso_settings'
     resources :notifications, only: %i[index create], controller: 'notifications_settings'
     resource :esign, only: %i[show create new update destroy], controller: 'esign_settings'
     resources :users, only: %i[index]
@@ -193,6 +195,11 @@ Rails.application.routes.draw do
       end
     end
     resource :account, only: %i[show update destroy]
+    resources :divisions, except: :show do
+      post :archive, on: :member
+      post :restore, on: :member
+      post :impersonate, on: :member
+    end
     resources :profile, only: %i[index] do
       collection do
         patch :update_contact

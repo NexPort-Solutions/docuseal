@@ -32,7 +32,8 @@ module Mcp
       module_function
 
       def call(arguments, current_user, current_ability)
-        templates = Templates.search(current_user, Template.accessible_by(current_ability).active, arguments['q'])
+        templates = Templates.search(current_user, current_user.account, Template.accessible_by(current_ability).active,
+                                     arguments['q'])
 
         limit = arguments.fetch('limit', 10).to_i
         limit = 10 if limit <= 0

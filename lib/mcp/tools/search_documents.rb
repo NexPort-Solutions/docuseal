@@ -32,7 +32,7 @@ module Mcp
       module_function
 
       def call(arguments, current_user, current_ability)
-        submissions = Submissions.search(current_user, Submission.accessible_by(current_ability).active,
+        submissions = Submissions.search(current_user, current_user.account, Submission.accessible_by(current_ability).active,
                                          arguments['q'], search_template: true)
 
         limit = arguments.fetch('limit', 10).to_i

@@ -24,6 +24,47 @@ en: &en
   or_add_from: Or add from
   upload_a_new_document: Upload a New Document
   billing: Billing
+  divisions: Divisions
+  division_name: Division name
+  add_division: Add division
+  edit_division: Edit division
+  first_division_admin: First division admin
+  branding: Branding
+  display_name: Display name
+  sender_name: Sender name
+  support_email: Support email
+  primary_color: Primary color
+  secondary_color: Secondary color
+  logo: Logo
+  platform_admin: Platform admin
+  viewer: Viewer
+  contributor: Contributor
+  account_admin: Account admin
+  account_role: Account role
+  accounts: Accounts
+  open_workspace: Open workspace
+  open_settings: Open settings
+  switch_account: Switch account
+  switched_to_account_name: Switched to %{name}.
+  view_all_accounts: View all accounts
+  choose_an_account_to_open_its_workspace_and_settings: Choose an account to open its workspace and settings.
+  support: Support
+  division_has_been_created: Division has been created.
+  division_has_been_updated: Division has been updated.
+  division_has_been_archived: Division has been archived.
+  division_has_been_restored: Division has been restored.
+  division_does_not_have_an_active_admin: This division does not have an active admin to impersonate.
+  now_supporting_division_name: Now supporting %{name}.
+  you_are_not_authorized_to_manage_divisions: You are not authorized to manage divisions.
+  google_sso_is_not_configured: Google Workspace SSO is not configured for this deployment.
+  google_workspace_sign_in_failed: Google Workspace sign-in failed.
+  google_email_must_be_verified: Google Workspace email must be verified before sign-in is allowed.
+  unable_to_match_google_account_to_a_division: Unable to match this Google account to a division.
+  google_account_is_already_linked_to_another_division: This Google account is already linked to a different division.
+  google_account_is_not_allowed_for_this_division: This Google account is not allowed for the selected division.
+  successfully_signed_in_with_google: Successfully signed in with Google Workspace.
+  sign_in_with_google_workspace_for_your_division: Sign in with Google Workspace for your division.
+  sms_delivery_is_not_enabled_for_this_deployment: SMS delivery is not enabled for this deployment.
   hi_there: Hi there
   templates_that_require_email_or_phone_2fa_cannot_be_used_via_a_shared_link: Templates that require email or phone 2FA cannot be used via a shared link.
   pro: Pro
@@ -831,7 +872,7 @@ en: &en
   use_otp_code_to_access_the_api_key_html: Use <b>%{code}</b> code to access the API key.
   please_reply_to_this_email_if_you_dont_recognize_this_request: Please reply to this email if you don't recognize this request.
   your_user_account_has_been_archived_contact_your_administrator_to_restore_access_to_your_account: Your user account has been archived. Contact your administrator to restore access to your account.
-  your_email_could_not_be_reached_this_may_happen_if_there_was_a_typo_in_your_address_or_if_your_mailbox_is_not_available_please_contact_support_email_to_log_in: Your email could not be reached. This may happen if there was a typo in your address or if your mailbox is not available. Please contact support@docuseal.com to log in.
+  your_email_could_not_be_reached_this_may_happen_if_there_was_a_typo_in_your_address_or_if_your_mailbox_is_not_available_please_contact_support_email_to_log_in: Your email could not be reached. This may happen if there was a typo in your address or if your mailbox is not available. Please contact your DocuSeal support contact to log in.
   efficient_search_with_search_index: Efficient search with search index
   reindex: Reindex
   build_search_index: Build Search Index
@@ -998,7 +1039,7 @@ en: &en
     settings: 'Settings'
     settings_account_description: 'With comprehensive account settings, you can customize the eSigning experience and invite more users.'
     support: 'Support'
-    support_description: 'You can use our self-service AI assistant or email us at support@docuseal.com if you have any questions.'
+    support_description: 'Contact your DocuSeal support contact if you have any questions.'
     settings_template_description: 'Use this button to access your account settings page.'
   doorkeeper:
     scopes:

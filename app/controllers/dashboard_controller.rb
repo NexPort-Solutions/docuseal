@@ -10,6 +10,8 @@ class DashboardController < ApplicationController
   skip_authorization_check
 
   def index
+    return render :index if accessible_accounts.none? || accessible_accounts.many?
+
     if cookies.permanent[:dashboard_view] == 'submissions'
       SubmissionsDashboardController.dispatch(:index, request, response)
     else
@@ -28,9 +30,10 @@ class DashboardController < ApplicationController
   def maybe_redirect_mfa_setup
     return unless signed_in?
     return if current_user.otp_required_for_login
+    return unless current_account
 
     return if !current_user.otp_required_for_login && !AccountConfig.exists?(value: true,
-                                                                             account_id: current_user.account_id,
+                                                                             account_id: current_account.id,
                                                                              key: AccountConfig::FORCE_MFA)
 
     redirect_to mfa_setup_path, notice: I18n.t('setup_2fa_to_continue')

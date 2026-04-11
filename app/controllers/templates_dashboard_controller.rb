@@ -15,7 +15,7 @@ class TemplatesDashboardController < ApplicationController
       TemplateFolders.filter_active_folders(@template_folders.where(parent_folder_id: nil), @templates)
 
     @template_folders = TemplateFolders.search(@template_folders, params[:q])
-    @template_folders = TemplateFolders.sort(@template_folders, current_user, selected_order)
+    @template_folders = TemplateFolders.sort(@template_folders, current_account:, order: selected_order)
 
     @pagy, @template_folders = pagy(
       @template_folders,
@@ -28,7 +28,7 @@ class TemplatesDashboardController < ApplicationController
     else
       @template_folders = @template_folders.reject { |e| e.name == TemplateFolder::DEFAULT_NAME }
       @templates = filter_templates(@templates).preload(:author, :template_accesses)
-      @templates = Templates::Order.call(@templates, current_user, selected_order)
+      @templates = Templates::Order.call(@templates, current_account:, order: selected_order)
 
       limit =
         if @template_folders.size < 4
@@ -50,7 +50,7 @@ class TemplatesDashboardController < ApplicationController
 
     if params[:q].blank?
       if Docuseal.multitenant? ? current_account.testing? : current_account.linked_account_account
-        shared_account_ids = [current_user.account_id]
+        shared_account_ids = [current_account.id]
         shared_account_ids << TemplateSharing::ALL_ID if !Docuseal.multitenant? && !current_account.testing?
 
         shared_template_ids = TemplateSharing.where(account_id: shared_account_ids).select(:template_id)
@@ -66,7 +66,7 @@ class TemplatesDashboardController < ApplicationController
       end
     end
 
-    Templates.search(current_user, rel, params[:q])
+    Templates.search(current_user, current_account, rel, params[:q])
   end
 
   def selected_order
@@ -88,7 +88,7 @@ class TemplatesDashboardController < ApplicationController
                                               template: :author,
                                               submitters: :start_form_submission_events)
 
-    @related_submissions = Submissions.search(current_user, @related_submissions, params[:q])
+    @related_submissions = Submissions.search(current_user, current_account, @related_submissions, params[:q])
                                       .order(id: :desc)
 
     @related_submissions_pagy, @related_submissions = pagy_auto(@related_submissions, limit: 5)

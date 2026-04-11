@@ -6,14 +6,16 @@ module Docuseal
   PRODUCT_EMAIL_URL = ENV.fetch('PRODUCT_EMAIL_URL', PRODUCT_URL)
   NEWSLETTER_URL = "#{PRODUCT_URL}/newsletters".freeze
   ENQUIRIES_URL = "#{PRODUCT_URL}/enquiries".freeze
-  PRODUCT_NAME = 'DocuSeal'
+  PRODUCT_NAME = ENV.fetch('PRODUCT_NAME', 'DocuSeal')
+  DEFAULT_PRIMARY_COLOR = '#e97a42'
+  DEFAULT_SECONDARY_COLOR = '#faf7f5'
   DEFAULT_APP_URL = ENV.fetch('APP_URL', 'http://localhost:3000')
   GITHUB_URL = 'https://github.com/docusealco/docuseal'
   DISCORD_URL = 'https://discord.gg/qygYCDGck9'
   TWITTER_URL = 'https://twitter.com/docusealco'
   TWITTER_HANDLE = '@docusealco'
   CHATGPT_URL = "#{PRODUCT_URL}/chat".freeze
-  SUPPORT_EMAIL = 'support@docuseal.com'
+  SUPPORT_EMAIL = ENV.fetch('SUPPORT_EMAIL', 'support@docuseal.com')
   HOST = ENV.fetch('HOST', 'localhost')
   AATL_CERT_NAME = 'docuseal_aatl'
   CONSOLE_URL = if Rails.env.development?
@@ -118,6 +120,10 @@ module Docuseal
 
   def product_name
     PRODUCT_NAME
+  end
+
+  def sms_enabled?
+    false
   end
 
   def refresh_default_url_options!

@@ -4,11 +4,11 @@ module Templates
   module Order
     module_function
 
-    def call(templates, current_user, order)
+    def call(templates, current_account:, order:)
       case order
       when 'used_at'
         subquery = Submission.select(:template_id, Submission.arel_table[:created_at].maximum.as('created_at'))
-                             .where(account_id: current_user.account_id)
+                             .where(account_id: current_account.id)
                              .group(:template_id)
 
         templates = templates.joins(

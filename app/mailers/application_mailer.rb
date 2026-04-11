@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class ApplicationMailer < ActionMailer::Base
-  default from: 'DocuSeal <info@docuseal.com>'
+  default from: -> { branded_from_header }, reply_to: -> { branded_reply_to_header }
   layout 'mailer'
 
   register_interceptor ActionMailerConfigsInterceptor
@@ -37,5 +37,30 @@ class ApplicationMailer < ActionMailer::Base
 
   def put_metadata(attrs)
     @message_metadata = (@message_metadata || {}).merge(attrs)
+  end
+
+  private
+
+  def branding_mail_account
+    account = @current_account if defined?(@current_account)
+    account ||= @account if defined?(@account)
+    account ||= @submitter&.account if defined?(@submitter)
+    account ||= @template&.account if defined?(@template)
+
+    account
+  end
+
+  def branded_from_header
+    account = branding_mail_account
+
+    if account.present?
+      %("#{account.sender_name.delete('"')}" <info@docuseal.com>)
+    else
+      'DocuSeal <info@docuseal.com>'
+    end
+  end
+
+  def branded_reply_to_header
+    branding_mail_account&.default_reply_to
   end
 end

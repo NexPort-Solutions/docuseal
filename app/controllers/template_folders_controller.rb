@@ -17,11 +17,11 @@ class TemplateFoldersController < ApplicationController
       @template_folder.subfolders.where(id: Template.accessible_by(current_ability).active.select(:folder_id))
 
     @template_folders = TemplateFolders.search(@template_folders, params[:q])
-    @template_folders = TemplateFolders.sort(@template_folders, current_user, selected_order)
+    @template_folders = TemplateFolders.sort(@template_folders, current_account:, order: selected_order)
 
     if @templates.exists?
-      @templates = Templates.search(current_user, @templates, params[:q])
-      @templates = Templates::Order.call(@templates, current_user, selected_order)
+      @templates = Templates.search(current_user, current_account, @templates, params[:q])
+      @templates = Templates::Order.call(@templates, current_account:, order: selected_order)
 
       limit =
         if @template_folders.size < 4
@@ -78,7 +78,7 @@ class TemplateFoldersController < ApplicationController
                          template: :author,
                          submitters: :start_form_submission_events)
 
-    @related_submissions = Submissions.search(current_user, @related_submissions, params[:q])
+    @related_submissions = Submissions.search(current_user, current_account, @related_submissions, params[:q])
                                       .order(id: :desc)
 
     @related_submissions_pagy, @related_submissions = pagy_auto(@related_submissions, limit: 5)

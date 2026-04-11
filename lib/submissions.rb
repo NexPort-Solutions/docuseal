@@ -7,9 +7,9 @@ module Submissions
 
   module_function
 
-  def search(current_user, submissions, keyword, search_values: false, search_template: false)
+  def search(current_user, current_account, submissions, keyword, search_values: false, search_template: false)
     if Docuseal.fulltext_search?
-      fulltext_search(current_user, submissions, keyword, search_template:)
+      fulltext_search(current_user, current_account, submissions, keyword, search_template:)
     else
       plain_search(submissions, keyword, search_values:, search_template:)
     end
@@ -38,11 +38,11 @@ module Submissions
     submissions.joins(:submitters).where(arel).group(:id)
   end
 
-  def fulltext_search(current_user, submissions, keyword, search_template: false)
+  def fulltext_search(_current_user, current_account, submissions, keyword, search_template: false)
     return submissions if keyword.blank?
 
     arel = SearchEntry.where(record_type: 'Submission')
-                      .where(account_id: current_user.account_id)
+                      .where(account_id: current_account.id)
                       .where(*SearchEntries.build_tsquery(keyword))
                       .select(:record_id).arel
 
@@ -51,8 +51,8 @@ module Submissions
         arel,
         Submission.where(
           template_id: SearchEntry.where(record_type: 'Template')
-                                  .where(account_id: [current_user.account_id,
-                                                      current_user.account.linked_account_account&.account_id].compact)
+                                  .where(account_id: [current_account.id,
+                                                      current_account.linked_account_account&.account_id].compact)
                                   .where(*SearchEntries.build_tsquery(keyword))
                                   .select(:record_id)
         ).select(:id).arel
@@ -61,7 +61,7 @@ module Submissions
 
     arel = Arel::Nodes::Union.new(
       arel, Submitter.joins(:search_entry)
-                     .where(search_entry: { account_id: current_user.account_id })
+                     .where(search_entry: { account_id: current_account.id })
                      .where(*SearchEntries.build_tsquery(keyword, with_or_vector: true))
                      .select(:submission_id).arel
     )
@@ -98,20 +98,21 @@ module Submissions
   end
 
   def create_from_emails(template:, user:, emails:, source:, mark_as_sent: false, params: {})
-    preferences = Submitters.normalize_preferences(user.account, user, params)
+    account = template.account
+    preferences = Submitters.normalize_preferences(account, user, params)
 
     expire_at = params[:expire_at].presence || Templates.build_default_expire_at(template)
 
     parse_emails(emails, user).uniq.map do |email|
       submission = template.submissions.new(created_by_user: user,
-                                            account_id: user.account_id,
+                                            account_id: account.id,
                                             source:,
                                             expire_at:,
                                             template_submitters: template.submitters)
 
       submission.submitters.new(email: normalize_email(email),
                                 uuid: template.submitters.first['uuid'],
-                                account_id: user.account_id,
+                                account_id: account.id,
                                 preferences:,
                                 sent_at: mark_as_sent ? Time.current : nil)
 

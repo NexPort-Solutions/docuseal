@@ -1,0 +1,64 @@
+<div class="max-w-6xl mx-auto px-4 md:px-2">
+  <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-4xl font-bold"><%= t('accounts') %></h1>
+      <p class="text-base-content/70 mt-2">
+        <%= t('choose_an_account_to_open_its_workspace_and_settings') %>
+      </p>
+    </div>
+  </div>
+
+  <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <% accessible_accounts.each do |account| %>
+      <% membership_role = current_user.membership_role_for(account) %>
+      <div class="card bg-base-100 border border-base-300 shadow-sm">
+        <div class="card-body gap-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="card-title text-xl"><%= account.branded_name %></h2>
+              <p class="text-sm text-base-content/60"><%= account.name %></p>
+            </div>
+            <% if membership_role.present? %>
+              <span class="badge badge-outline"><%= t(membership_role) %></span>
+            <% elsif current_user.platform_admin? %>
+              <span class="badge badge-info badge-outline"><%= t('platform_admin') %></span>
+            <% end %>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3 text-sm">
+            <div class="rounded-lg bg-base-200 px-3 py-2">
+              <div class="text-base-content/60"><%= t('folders') %></div>
+              <div class="text-lg font-semibold"><%= account.template_folders.active.where.not(name: TemplateFolder::DEFAULT_NAME).count %></div>
+            </div>
+            <div class="rounded-lg bg-base-200 px-3 py-2">
+              <div class="text-base-content/60"><%= t('templates') %></div>
+              <div class="text-lg font-semibold"><%= account.templates.active.count %></div>
+            </div>
+            <div class="rounded-lg bg-base-200 px-3 py-2">
+              <div class="text-base-content/60"><%= t('submissions') %></div>
+              <div class="text-lg font-semibold"><%= account.submissions.where(archived_at: nil).count %></div>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-2">
+            <%= button_to select_account_path(account),
+                          method: :post,
+                          params: { redirect_to: templates_path },
+                          class: 'btn btn-primary flex-1' do %>
+              <%= t('open_workspace') %>
+            <% end %>
+
+            <% if current_user.account_admin_for?(account) || current_user.platform_admin? %>
+              <%= button_to select_account_path(account),
+                            method: :post,
+                            params: { redirect_to: settings_account_path },
+                            class: 'btn btn-outline flex-1' do %>
+                <%= t('open_settings') %>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

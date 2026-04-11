@@ -40,6 +40,17 @@ Devise.setup do |config|
     manager.default_strategies(scope: :user).unshift(:two_factor_authenticatable)
   end
 
+  if ENV['GOOGLE_OAUTH_CLIENT_ID'].present? && ENV['GOOGLE_OAUTH_CLIENT_SECRET'].present?
+    config.omniauth :google_oauth2,
+                    ENV['GOOGLE_OAUTH_CLIENT_ID'],
+                    ENV['GOOGLE_OAUTH_CLIENT_SECRET'],
+                    name: :google_oauth2,
+                    scope: 'openid,email,profile',
+                    prompt: 'select_account',
+                    image_aspect_ratio: 'square',
+                    image_size: 128
+  end
+
   # The secret key used by Devise. Devise uses this key to generate
   # random tokens. Changing this key will render invalid all existing
   # confirmation, reset password and unlock tokens in the database.

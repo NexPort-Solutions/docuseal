@@ -3,26 +3,57 @@
 class Ability
   include CanCan::Ability
 
-  def initialize(user)
-    can %i[read create update], Template, Abilities::TemplateConditions.collection(user) do |template|
-      Abilities::TemplateConditions.entity(template, user:, ability: 'manage')
+  def initialize(user, current_account: nil)
+    return unless user
+
+    if user.platform_admin?
+      can :manage, :all
+      can :manage, :tenants
+      can :manage, :reply_to
+      can :manage, :personalization_advanced
+      can :manage, :saml_sso
+
+      return
     end
 
-    can :destroy, Template, account_id: user.account_id
-    can :manage, TemplateFolder, account_id: user.account_id
-    can :manage, TemplateSharing, template: { account_id: user.account_id }
-    can :manage, Submission, account_id: user.account_id
-    can :manage, Submitter, account_id: user.account_id
-    can :manage, User, account_id: user.account_id
-    can :manage, EncryptedConfig, account_id: user.account_id
+    can :manage, User, id: user.id
     can :manage, EncryptedUserConfig, user_id: user.id
-    can :manage, AccountConfig, account_id: user.account_id
     can :manage, UserConfig, user_id: user.id
-    can :manage, Account, id: user.account_id
     can :manage, AccessToken, user_id: user.id
     can :manage, McpToken, user_id: user.id
-    can :manage, WebhookUrl, account_id: user.account_id
-
     can :manage, :mcp
+
+    return unless current_account && user.can_access_account?(current_account)
+
+    can :read, Account, id: current_account.id
+    can :read, Template, Abilities::TemplateConditions.collection(user, account: current_account) do |template|
+      Abilities::TemplateConditions.entity(template, user:, account: current_account, ability: 'read')
+    end
+
+    can :read, TemplateFolder, account_id: current_account.id
+    can :read, Submission, account_id: current_account.id
+    can :read, Submitter, account_id: current_account.id
+
+    if user.contributor_for?(current_account)
+      can %i[create update destroy], Template, Abilities::TemplateConditions.collection(user, account: current_account) do |template|
+        Abilities::TemplateConditions.entity(template, user:, account: current_account, ability: 'manage')
+      end
+
+      can :manage, TemplateFolder, account_id: current_account.id
+      can :manage, TemplateSharing, template: { account_id: current_account.id }
+      can :manage, Submission, account_id: current_account.id
+      can :manage, Submitter, account_id: current_account.id
+      can :manage, WebhookUrl, account_id: current_account.id
+    end
+
+    return unless user.account_admin_for?(current_account)
+
+    can :create, User
+    can :manage, User do |target_user|
+      target_user == user || target_user.can_access_account?(current_account)
+    end
+    can :manage, Account, id: current_account.id
+    can :manage, EncryptedConfig, account_id: current_account.id
+    can :manage, AccountConfig, account_id: current_account.id
   end
 end

@@ -10,8 +10,8 @@ class SubmissionsDashboardController < ApplicationController
                                .where(templates: { archived_at: nil })
                                .preload(:template_accesses, :created_by_user, template: :author)
 
-    @submissions = Submissions.search(current_user, @submissions, params[:q], search_template: true)
-    @submissions = Submissions::Filter.call(@submissions, current_user, params)
+    @submissions = Submissions.search(current_user, current_account, @submissions, params[:q], search_template: true)
+    @submissions = Submissions::Filter.call(@submissions, current_user, current_account, params)
 
     @submissions = if params[:completed_at_from].present? || params[:completed_at_to].present?
                      @submissions.order(Submitter.arel_table[:completed_at].maximum.desc)

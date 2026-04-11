@@ -7,6 +7,18 @@ class SessionsController < Devise::SessionsController
 
   def create
     email = sign_in_params[:email].to_s.downcase
+    user = User.find_by(email:)
+    force_sso_accounts = user&.accessible_accounts&.select do |account|
+      account.account_configs.find_or_initialize_by(key: AccountConfig::FORCE_SSO_AUTH_KEY).value == true
+    end.to_a
+
+    if user.present? && !user.platform_admin? && force_sso_accounts.present? &&
+       force_sso_accounts.size == user.accessible_accounts.size
+      return redirect_to user_google_oauth2_omniauth_authorize_path(
+        { account_id: force_sso_accounts.one? ? force_sso_accounts.first.id : nil, login_hint: email }.compact
+      ),
+                         alert: I18n.t('sign_in_with_google_workspace_for_your_division')
+    end
 
     if Docuseal.multitenant? && !User.exists?(email:)
       Rollbar.warning('Sign in new user') if defined?(Rollbar)
@@ -18,6 +30,8 @@ class SessionsController < Devise::SessionsController
     if User.exists?(email:, otp_required_for_login: true) && sign_in_params[:otp_attempt].blank?
       return render :otp, locals: { resource: User.new(sign_in_params) }, status: :unprocessable_content
     end
+
+    session.delete(:google_sso_authenticated)
 
     super
   end
@@ -31,7 +45,7 @@ class SessionsController < Devise::SessionsController
       return params[:redir]
     end
 
-    super
+    root_path
   end
 
   def configure_permitted_parameters

@@ -11,6 +11,11 @@ class SubmittersController < ApplicationController
   end
 
   def update
+    if params[:send_sms] == '1'
+      return redirect_back fallback_location: submission_path(@submitter.submission),
+                           alert: I18n.t('sms_delivery_is_not_enabled_for_this_deployment')
+    end
+
     submission = @submitter.submission
 
     if @submitter.submission_events.exists?(event_type: 'start_form') || submission.archived_at? || submission.expired?

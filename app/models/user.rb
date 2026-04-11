@@ -22,11 +22,13 @@
 #  locked_at              :datetime
 #  otp_required_for_login :boolean          default(FALSE), not null
 #  otp_secret             :string
+#  provider               :string
 #  remember_created_at    :datetime
 #  reset_password_sent_at :datetime
 #  reset_password_token   :string
 #  role                   :string           not null
 #  sign_in_count          :integer          default(0), not null
+#  uid                    :string
 #  unconfirmed_email      :string
 #  unlock_token           :string
 #  uuid                   :string           not null
@@ -38,6 +40,7 @@
 #
 #  index_users_on_account_id            (account_id)
 #  index_users_on_email                 (email) UNIQUE
+#  index_users_on_provider_and_uid      (provider,uid) UNIQUE
 #  index_users_on_reset_password_token  (reset_password_token) UNIQUE
 #  index_users_on_unlock_token          (unlock_token) UNIQUE
 #  index_users_on_uuid                  (uuid) UNIQUE
@@ -48,7 +51,8 @@
 #
 class User < ApplicationRecord
   ROLES = [
-    ADMIN_ROLE = 'admin'
+    ADMIN_ROLE = 'admin',
+    PLATFORM_ADMIN_ROLE = 'platform_admin'
   ].freeze
 
   EMAIL_REGEXP = /[^@;,<>\s]+@[^@;,<>\s]+/
@@ -60,6 +64,8 @@ class User < ApplicationRecord
   has_one_attached :initials
 
   belongs_to :account
+  has_many :account_accesses, dependent: :destroy
+  has_many :membership_accounts, through: :account_accesses, source: :account
   has_one :access_token, dependent: :destroy
   has_many :access_tokens, dependent: :destroy
   has_many :mcp_tokens, dependent: :destroy
@@ -69,7 +75,8 @@ class User < ApplicationRecord
   has_many :encrypted_configs, dependent: :destroy, class_name: 'EncryptedUserConfig'
   has_many :email_messages, dependent: :destroy, foreign_key: :author_id, inverse_of: :author
 
-  devise :two_factor_authenticatable, :recoverable, :rememberable, :validatable, :trackable, :lockable
+  devise :two_factor_authenticatable, :recoverable, :rememberable, :validatable, :trackable, :lockable,
+         :omniauthable, omniauth_providers: [:google_oauth2]
 
   attribute :role, :string, default: ADMIN_ROLE
   attribute :uuid, :string, default: -> { SecureRandom.uuid }
@@ -80,12 +87,15 @@ class User < ApplicationRecord
 
   validates :email, format: { with: /\A[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\z/ }
 
+  after_commit :ensure_primary_account_access!, on: :create
+  after_commit :sync_membership_state!, on: %i[create update]
+
   def access_token
     super || build_access_token.tap(&:save!)
   end
 
   def active_for_authentication?
-    super && !archived_at? && !account.archived_at?
+    super && !archived_at? && active_accessible_accounts.exists?
   end
 
   def remember_me
@@ -95,7 +105,95 @@ class User < ApplicationRecord
   def sidekiq?
     return true if Rails.env.development?
 
-    role == 'admin'
+    role.in?([ADMIN_ROLE, PLATFORM_ADMIN_ROLE])
+  end
+
+  def platform_admin?
+    role == PLATFORM_ADMIN_ROLE
+  end
+
+  def admin?
+    role.in?([ADMIN_ROLE, PLATFORM_ADMIN_ROLE])
+  end
+
+  def accessible_accounts
+    if platform_admin?
+      Account.active.order(:name)
+    else
+      Account.active.where(id: account_accesses.select(:account_id)).order(:name)
+    end
+  end
+
+  def active_accessible_accounts
+    accessible_accounts
+  end
+
+  def accessible_account_ids
+    if platform_admin?
+      Account.active.select(:id)
+    else
+      account_accesses.select(:account_id)
+    end
+  end
+
+  def admin_managed_accounts
+    if platform_admin?
+      accessible_accounts
+    else
+      Account.active.where(id: account_accesses.account_admins.select(:account_id)).order(:name)
+    end
+  end
+
+  def account_access_for(account)
+    return if account.blank? || platform_admin?
+
+    account_accesses.find_by(account_id: account.id)
+  end
+
+  def membership_role_for(account)
+    return AccountAccess::ACCOUNT_ADMIN_ROLE if platform_admin?
+
+    account_access_for(account)&.role
+  end
+
+  def can_access_account?(account)
+    return false if account.blank?
+    return true if platform_admin?
+
+    account_access_for(account).present?
+  end
+
+  def contributor_for?(account)
+    return false if account.blank?
+    return true if platform_admin?
+
+    account_access_for(account)&.contributor?
+  end
+
+  def account_admin_for?(account)
+    return false if account.blank?
+    return true if platform_admin?
+
+    account_access_for(account)&.account_admin?
+  end
+
+  def sync_membership_state!
+    return if destroyed?
+
+    membership_account = preferred_membership_account
+
+    if membership_account
+      updates = {}
+      updates[:account_id] = membership_account.id if account_id != membership_account.id
+      updates[:archived_at] = nil if archived_at?
+      update_columns(updates) if updates.present?
+    elsif !platform_admin? && archived_at.blank?
+      update_columns(archived_at: Time.current)
+    end
+  end
+
+  def self.google_oauth_available?
+    ENV['GOOGLE_OAUTH_CLIENT_ID'].present? && ENV['GOOGLE_OAUTH_CLIENT_SECRET'].present?
   end
 
   def self.sign_in_after_reset_password
@@ -120,5 +218,22 @@ class User < ApplicationRecord
     else
       email
     end
+  end
+
+  private
+
+  def ensure_primary_account_access!
+    return if account_id.blank? || account_accesses.exists?(account_id:)
+
+    account_accesses.create!(account_id:, role: AccountAccess::ACCOUNT_ADMIN_ROLE)
+  end
+
+  def preferred_membership_account
+    if account_id.present?
+      account = accessible_accounts.find_by(id: account_id)
+      return account if account
+    end
+
+    accessible_accounts.first
   end
 end

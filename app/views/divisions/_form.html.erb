@@ -1,0 +1,79 @@
+<%= form_with model: @division, url: @division.persisted? ? settings_division_path(@division) : settings_divisions_path, method: @division.persisted? ? :patch : :post, local: true, html: { multipart: true, class: 'space-y-6' } do |f| %>
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="form-control">
+      <%= f.label :name, t('division_name'), class: 'label' %>
+      <%= f.text_field :name, required: true, class: 'base-input' %>
+    </div>
+    <div class="form-control">
+      <%= f.label :locale, t('language'), class: 'label' %>
+      <%= f.select :locale, options_for_select(AccountsController::LOCALE_OPTIONS.invert, @division.locale), {}, class: 'base-select' %>
+    </div>
+    <div class="form-control">
+      <%= f.label :timezone, t('time_zone'), class: 'label' %>
+      <%= f.select :timezone, options_for_select(ActiveSupport::TimeZone.all.map { |z| [z.to_s, z.name] }, @division.timezone), {}, class: 'base-select' %>
+    </div>
+  </div>
+
+  <% unless @division.persisted? %>
+    <div class="border-t border-base-300 pt-4 space-y-4">
+      <h2 class="text-2xl font-bold"><%= t('first_division_admin') %></h2>
+      <%= fields_for :division_admin do |ff| %>
+        <div class="grid md:grid-cols-2 gap-4">
+          <div class="form-control">
+            <%= ff.label :first_name, t('first_name'), class: 'label' %>
+            <%= ff.text_field :first_name, required: true, class: 'base-input' %>
+          </div>
+          <div class="form-control">
+            <%= ff.label :last_name, t('last_name'), class: 'label' %>
+            <%= ff.text_field :last_name, required: true, class: 'base-input' %>
+          </div>
+        </div>
+        <div class="form-control">
+          <%= ff.label :email, t('email'), class: 'label' %>
+          <%= ff.email_field :email, required: true, class: 'base-input' %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="border-t border-base-300 pt-4 space-y-4">
+    <h2 class="text-2xl font-bold"><%= t('branding') %></h2>
+    <% branding = @division.branding_settings %>
+    <%= fields_for :branding do |bf| %>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="form-control">
+          <%= bf.label :display_name, t('display_name'), class: 'label' %>
+          <%= text_field_tag 'branding[display_name]', branding['display_name'], class: 'base-input' %>
+        </div>
+        <div class="form-control">
+          <%= bf.label :sender_name, t('sender_name'), class: 'label' %>
+          <%= text_field_tag 'branding[sender_name]', branding['sender_name'], class: 'base-input' %>
+        </div>
+        <div class="form-control">
+          <%= bf.label :support_email, t('support_email'), class: 'label' %>
+          <%= email_field_tag 'branding[support_email]', branding['support_email'], class: 'base-input' %>
+        </div>
+        <div class="form-control">
+          <%= bf.label :default_reply_to, t('reply_to'), class: 'label' %>
+          <%= email_field_tag 'branding[default_reply_to]', branding['default_reply_to'], class: 'base-input' %>
+        </div>
+        <div class="form-control">
+          <%= bf.label :primary_color, t('primary_color'), class: 'label' %>
+          <%= text_field_tag 'branding[primary_color]', branding['primary_color'], class: 'base-input', placeholder: '#e97a42' %>
+        </div>
+        <div class="form-control">
+          <%= bf.label :secondary_color, t('secondary_color'), class: 'label' %>
+          <%= text_field_tag 'branding[secondary_color]', branding['secondary_color'], class: 'base-input', placeholder: '#faf7f5' %>
+        </div>
+      </div>
+      <div class="form-control">
+        <%= bf.label :logo, t('logo'), class: 'label' %>
+        <%= file_field_tag 'branding[logo]', class: 'base-input' %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="form-control pt-2">
+    <%= f.button button_title(title: @division.persisted? ? t('update') : t('create')), class: 'base-button' %>
+  </div>
+<% end %>

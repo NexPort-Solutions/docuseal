@@ -41,7 +41,8 @@ COPY ./tailwind.application.config.js ./tailwind.application.config.js
 COPY ./app/javascript ./app/javascript
 COPY ./app/views ./app/views
 
-RUN echo "gem 'shakapacker'" > Gemfile && ./bin/shakapacker
+RUN chmod +x ./bin/shakapacker && \
+    echo "gem 'shakapacker'" > Gemfile && ./bin/shakapacker
 
 FROM ruby:4.0.1-alpine AS app
 
@@ -84,14 +85,16 @@ COPY --chown=docuseal:docuseal ./tmp ./tmp
 COPY --chown=docuseal:docuseal LICENSE LICENSE_ADDITIONAL_TERMS README.md Rakefile config.ru .version ./
 COPY --chown=docuseal:docuseal .version ./public/version
 
-COPY --chown=docuseal:docuseal --from=download /fonts/GoNotoKurrent-Regular.ttf /fonts/GoNotoKurrent-Bold.ttf /fonts/DancingScript-Regular.otf /fonts/OFL.txt /fonts
+COPY --chown=docuseal:docuseal --from=download /fonts/GoNotoKurrent-Regular.ttf /fonts/GoNotoKurrent-Bold.ttf /fonts/DancingScript-Regular.otf /fonts/OFL.txt /fonts/
 COPY --from=download /fonts/FreeSans.ttf /usr/share/fonts/freefont
 COPY --from=download /pdfium-linux/lib/libpdfium.so /usr/lib/libpdfium.so
 COPY --from=download /pdfium-linux/licenses/pdfium.txt /usr/lib/libpdfium-LICENSE.txt
 COPY --chown=docuseal:docuseal --from=download /model.onnx /app/tmp/model.onnx
 COPY --chown=docuseal:docuseal --from=webpack /app/public/packs ./public/packs
 
-RUN ln -s /fonts /app/public/fonts && \
+RUN chmod +x ./bin/* && \
+    mkdir -p /app/tmp/cache && \
+    ln -s /fonts /app/public/fonts && \
     bundle exec bootsnap precompile -j 1 --gemfile app/ lib/ && \
     chown -R docuseal:docuseal /app/tmp/cache
 

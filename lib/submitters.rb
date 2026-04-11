@@ -28,26 +28,26 @@ module Submitters
 
   module_function
 
-  def search(current_user, submitters, keyword)
+  def search(current_user, current_account, submitters, keyword)
     if Docuseal.fulltext_search?
-      fulltext_search(current_user, submitters, keyword)
+      fulltext_search(current_account, submitters, keyword)
     else
       plain_search(submitters, keyword)
     end
   end
 
-  def fulltext_search(current_user, submitters, keyword)
+  def fulltext_search(current_account, submitters, keyword)
     return submitters if keyword.blank?
 
     submitters.where(
       id: SearchEntry.where(record_type: 'Submitter')
-                     .where(account_id: current_user.account_id)
+                     .where(account_id: current_account.id)
                      .where(*SearchEntries.build_tsquery(keyword))
                      .select(:record_id)
     )
   end
 
-  def fulltext_search_field(current_user, submitters, keyword, field_name)
+  def fulltext_search_field(current_account, submitters, keyword, field_name)
     keyword = keyword.delete("\0")
 
     return submitters.none if keyword.blank?
@@ -81,7 +81,7 @@ module Submitters
       end
 
     submitter_ids = SearchEntry.where(record_type: 'Submitter')
-                               .where(account_id: current_user.account_id)
+                               .where(account_id: current_account.id)
                                .where(*query)
                                .limit(500)
                                .pluck(:record_id)

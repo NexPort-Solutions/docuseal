@@ -41,6 +41,61 @@
         </div>
       <% end %>
     <% end %>
+    <% if can?(:manage, current_account) %>
+      <div class="px-1 mt-8">
+        <h2 class="text-2xl font-bold mb-2">
+          <%= t('branding') %>
+        </h2>
+        <% branding = current_account.branding_settings %>
+        <%= form_with url: settings_account_path, method: :patch, local: true, multipart: true, class: 'space-y-4' do %>
+          <%= fields_for :account, current_account do |ff| %>
+            <%= ff.hidden_field :name %>
+            <%= ff.hidden_field :timezone %>
+            <%= ff.hidden_field :locale %>
+          <% end %>
+          <%= fields_for :branding do |ff| %>
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="form-control">
+                <%= ff.label :display_name, t('display_name'), class: 'label' %>
+                <%= text_field_tag 'branding[display_name]', branding['display_name'], class: 'base-input' %>
+              </div>
+              <div class="form-control">
+                <%= ff.label :sender_name, t('sender_name'), class: 'label' %>
+                <%= text_field_tag 'branding[sender_name]', branding['sender_name'], class: 'base-input' %>
+              </div>
+              <div class="form-control">
+                <%= ff.label :support_email, t('support_email'), class: 'label' %>
+                <%= email_field_tag 'branding[support_email]', branding['support_email'], class: 'base-input' %>
+              </div>
+              <div class="form-control">
+                <%= ff.label :default_reply_to, t('reply_to'), class: 'label' %>
+                <%= email_field_tag 'branding[default_reply_to]', branding['default_reply_to'], class: 'base-input' %>
+              </div>
+              <div class="form-control">
+                <%= ff.label :primary_color, t('primary_color'), class: 'label' %>
+                <%= text_field_tag 'branding[primary_color]', branding['primary_color'], class: 'base-input', placeholder: '#e97a42' %>
+              </div>
+              <div class="form-control">
+                <%= ff.label :secondary_color, t('secondary_color'), class: 'label' %>
+                <%= text_field_tag 'branding[secondary_color]', branding['secondary_color'], class: 'base-input', placeholder: '#faf7f5' %>
+              </div>
+            </div>
+            <div class="form-control">
+              <%= ff.label :logo, t('logo'), class: 'label' %>
+              <%= file_field_tag 'branding[logo]', class: 'base-input' %>
+              <% if current_account.logo.attached? %>
+                <div class="mt-3">
+                  <%= image_tag current_account.logo, class: 'h-16 w-16 object-contain rounded bg-base-200 p-2' %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+          <div class="form-control pt-2">
+            <button class="base-button" type="submit"><%= t('update') %></button>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
     <% if can?(:manage, AccountConfig) %>
       <div class="px-1 mt-8">
         <h2 class="text-2xl font-bold mb-2">

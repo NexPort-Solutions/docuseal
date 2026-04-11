@@ -42,13 +42,13 @@ module TemplateFolders
     template_folders.where(folder_exists).or(template_folders.where(subfolder_exists))
   end
 
-  def sort(template_folders, current_user, order)
+  def sort(template_folders, current_account:, order:)
     case order
     when 'used_at'
       subquery =
         Template.left_joins(:submissions)
                 .group(:folder_id)
-                .where(account_id: current_user.account_id)
+                .where(account_id: current_account.id)
                 .select(
                   :folder_id,
                   Template.arel_table[:updated_at].maximum.as('updated_at_max'),

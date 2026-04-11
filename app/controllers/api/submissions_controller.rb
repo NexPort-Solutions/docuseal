@@ -10,7 +10,7 @@ module Api
     end
 
     def index
-      submissions = Submissions.search(current_user, @submissions, params[:q])
+      submissions = Submissions.search(current_user, current_account, @submissions, params[:q])
       submissions = filter_submissions(submissions, params)
 
       submissions = paginate(submissions.preload(:created_by_user, :submitters,
@@ -51,6 +51,7 @@ module Api
 
     def create
       Params::SubmissionCreateValidator.call(params)
+      return render_sms_not_enabled if params[:send_sms].in?(['true', true, '1']) || nested_sms_request?
 
       return render json: { error: 'Template not found' }, status: :unprocessable_content if @template.nil?
 
@@ -116,7 +117,7 @@ module Api
         submissions = params[:archived].in?(['true', true]) ? submissions.archived : submissions.active
       end
 
-      Submissions::Filter.call(submissions, current_user, params)
+      Submissions::Filter.call(submissions, current_user, current_account, params)
     end
 
     def build_create_json(submissions)
@@ -180,6 +181,14 @@ module Api
 
         submissions
       end
+    end
+
+    def nested_sms_request?
+      params.to_unsafe_h.to_s.include?('"send_sms"=>true') || params.to_unsafe_h.to_s.include?('"send_sms"=>"1"')
+    end
+
+    def render_sms_not_enabled
+      render json: { error: I18n.t('sms_delivery_is_not_enabled_for_this_deployment') }, status: :unprocessable_content
     end
 
     def submissions_params
