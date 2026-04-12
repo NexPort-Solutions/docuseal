@@ -9,12 +9,13 @@
     </span>
   </td>
   <td>
-    <a href="<%= "#{Docuseal::CLOUD_URL}/sign_up?#{{ redir: "#{Docuseal::CONSOLE_URL}/on_premises" }.to_query}" %>" class="btn btn-neutral btn-sm text-white">
-      <%= t('unlock_with_docuseal_pro') %>
-    </a>
+    <span class="badge badge-outline whitespace-nowrap">
+      <%= t('planned_for_a_future_release', default: 'Planned for a future release') %>
+    </span>
   </td>
   <td>
-    <div class="tooltip" data-tip="<%= t('unlock_with_docuseal_pro') %>">
+    <div class="tooltip" data-tip="<%= t('feature_will_be_available_in_a_future_release_for_this_deployment',
+                                          default: 'This feature will be available in a future release for this deployment.') %>">
       <%= button_to settings_esign_path, method: :put, params: { name: Docuseal::AATL_CERT_NAME }, class: 'btn btn-outline btn-neutral btn-xs whitespace-nowrap', title: t('make_default'), disabled: true do %>
         <%= t('make_default') %>
       <% end %>

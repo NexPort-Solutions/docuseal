@@ -1,0 +1,31 @@
+<div class="max-w-5xl mx-auto px-4 md:px-2">
+  <div class="mb-6">
+    <h1 class="text-4xl font-bold"><%= t('settings') %></h1>
+    <p class="text-base-content/70 mt-2">
+      <%= t('choose_an_account_to_open_its_workspace_and_settings') %>
+    </p>
+  </div>
+
+  <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <% @accounts.each do |account| %>
+      <div class="card bg-base-100 border border-base-300 shadow-sm">
+        <div class="card-body gap-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="card-title text-xl"><%= account.branded_name %></h2>
+              <p class="text-sm text-base-content/60"><%= account.name %></p>
+            </div>
+            <span class="badge badge-outline"><%= t(current_user.membership_role_for(account)) %></span>
+          </div>
+
+          <%= button_to select_account_path(account),
+                        method: :post,
+                        params: { redirect_to: settings_account_path },
+                        class: 'btn btn-primary w-full' do %>
+            <%= t('open_settings') %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

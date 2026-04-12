@@ -27,7 +27,7 @@ RSpec.describe 'Profile Settings' do
       fill_in 'Last name', with: 'Beckham'
       fill_in 'Email', with: 'david.beckham@example.com'
 
-      all(:button, 'Update')[0].click
+      find('#profile_contact_update_button').click
 
       user.reload
 
@@ -39,7 +39,7 @@ RSpec.describe 'Profile Settings' do
     it 'does not update if email is invalid' do
       fill_in 'Email', with: 'devid+test@example'
 
-      all(:button, 'Update')[0].click
+      find('#profile_contact_update_button').click
 
       expect(page).to have_content('Email is invalid')
     end
@@ -51,8 +51,9 @@ RSpec.describe 'Profile Settings' do
       fill_in 'Confirm new password', with: 'newpassword'
       fill_in 'Current password', with: 'password'
 
-      all(:button, 'Update')[1].click
+      find('#profile_password_update_button').click
 
+      expect(page).to have_current_path(settings_profile_index_path, ignore_query: true)
       expect(page).to have_content('Password has been changed')
     end
 
@@ -61,7 +62,7 @@ RSpec.describe 'Profile Settings' do
       fill_in 'Confirm new password', with: 'newpassword1'
       fill_in 'Current password', with: 'password'
 
-      all(:button, 'Update')[1].click
+      find('#profile_password_update_button').click
 
       expect(page).to have_content("Password confirmation doesn't match Password")
     end
@@ -71,17 +72,16 @@ RSpec.describe 'Profile Settings' do
       fill_in 'Confirm new password', with: 'newpassword'
       fill_in 'Current password', with: 'wrongpassword'
 
-      all(:button, 'Update')[1].click
+      find('#profile_password_update_button').click
 
       expect(page).to have_content('Current password is invalid')
     end
 
     it 'resets password and signs in with new password', sidekiq: :inline do
       fill_in 'New password', with: 'newpassword'
-      accept_confirm('Are you sure?') do
-        find('label', text: 'Click here').click
-      end
+      find('label', text: 'Click here').click
 
+      expect(page).to have_current_path(settings_profile_index_path, ignore_query: true)
       expect(page).to have_content('An email with password reset instructions has been sent.')
 
       email = ActionMailer::Base.deliveries.last
@@ -103,6 +103,7 @@ RSpec.describe 'Profile Settings' do
       fill_in 'Password', with: 'new_strong_password'
       click_button 'Sign In'
 
+      expect(page).to have_current_path(root_path, ignore_query: true)
       expect(page).to have_content('Signed in successfully')
     end
   end

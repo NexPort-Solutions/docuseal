@@ -22,7 +22,7 @@ class TemplatesArchivedController < ApplicationController
                          template: :author,
                          submitters: :start_form_submission_events)
 
-    @related_submissions = Submissions.search(current_user, @related_submissions, params[:q])
+    @related_submissions = Submissions.search(current_user, current_account, @related_submissions, params[:q])
                                       .order(id: :desc)
 
     @related_submissions_pagy, @related_submissions = pagy_auto(@related_submissions, limit: 5)

@@ -1,5 +1,5 @@
 <div class="mt-2 mb-1">
-  <div class="tooltip w-full" data-tip="<%= t('sms_delivery_is_not_enabled_for_this_deployment') %>">
+  <div class="tooltip w-full" data-tip="<%= t('sms_delivery_is_planned_for_a_future_release', default: 'SMS delivery will be available in a future release for this deployment.') %>">
     <button class="btn btn-sm btn-primary text-gray-400 w-full" disabled><%= submitter.sent_at? ? t('re_send_sms') : t('send_sms') %></button>
   </div>
 </div>

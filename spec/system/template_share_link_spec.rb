@@ -9,29 +9,42 @@ RSpec.describe 'Template Share Link' do
     sign_in(author)
   end
 
+  def wait_for_shared_link(template, value)
+    Timeout.timeout(Capybara.default_max_wait_time) do
+      loop do
+        template.reload
+        break if template.shared_link == value
+
+        sleep 0.05
+      end
+    end
+  end
+
   context 'when the template is not shareable' do
     before do
       visit template_path(template)
     end
 
     it 'makes the template shareable' do
-      click_on 'Link'
+      find('#template_share_link_button').click
 
-      expect do
-        within '#modal' do
-          check 'template_shared_link'
-        end
-      end.to change { template.reload.shared_link }.from(false).to(true)
+      within '#modal' do
+        check 'template_shared_link'
+      end
+
+      wait_for_shared_link(template, true)
+      expect(template.shared_link).to eq(true)
     end
 
     it 'makes the template shareable on toggle' do
-      click_on 'Link'
+      find('#template_share_link_button').click
 
-      expect do
-        within '#modal' do
-          find('#template_shared_link').click
-        end
-      end.to change { template.reload.shared_link }.from(false).to(true)
+      within '#modal' do
+        find('#template_shared_link').click
+      end
+
+      wait_for_shared_link(template, true)
+      expect(template.shared_link).to eq(true)
     end
   end
 
@@ -42,13 +55,14 @@ RSpec.describe 'Template Share Link' do
     end
 
     it 'makes the template unshareable' do
-      click_on 'Link'
+      find('#template_share_link_button').click
 
-      expect do
-        within '#modal' do
-          uncheck 'template_shared_link'
-        end
-      end.to change { template.reload.shared_link }.from(true).to(false)
+      within '#modal' do
+        uncheck 'template_shared_link'
+      end
+
+      wait_for_shared_link(template, false)
+      expect(template.shared_link).to eq(false)
     end
   end
 end

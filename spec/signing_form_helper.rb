@@ -4,8 +4,10 @@ module SigningFormHelper
   module_function
 
   def draw_canvas
-    page.execute_script <<~JS
-      const canvas = document.getElementsByTagName('canvas')[0];
+    canvas = page.find('canvas', visible: :all, wait: Capybara.default_max_wait_time)
+
+    page.execute_script <<~JS, canvas
+      const canvas = arguments[0];
       const rect = canvas.getBoundingClientRect();
 
       const startX = rect.left + 50;
@@ -47,7 +49,7 @@ module SigningFormHelper
       drawStep();
     JS
 
-    sleep 0.1
+    sleep 0.2
   end
 
   def field_value(submitter, field_name)

@@ -74,16 +74,6 @@
           Star on Github
         </span>
       </a>
-      <a
-        v-if="isDemo"
-        href="https://docuseal.com/sign_up"
-        class="white-button flex items-center space-x-1 w-full"
-      >
-        <IconLogin />
-        <span>
-          {{ t('create_a_free_account') }}
-        </span>
-      </a>
     </div>
     <div
       v-if="attribution"
@@ -91,7 +81,7 @@
     >
       {{ t('powered_by') }}
       <a
-        href="https://www.docuseal.com/start"
+        href="https://github.com/docusealco/docuseal"
         target="_blank"
         class="underline"
       >DocuSeal</a> - {{ t('open_source_documents_software') }}
@@ -100,7 +90,7 @@
 </template>
 
 <script>
-import { IconCircleCheck, IconBrandGithub, IconMail, IconDownload, IconInnerShadowTop, IconLogin } from '@tabler/icons-vue'
+import { IconCircleCheck, IconBrandGithub, IconMail, IconDownload, IconInnerShadowTop } from '@tabler/icons-vue'
 import MarkdownContent from './markdown_content'
 import { sanitizeUrl } from '@braintree/sanitize-url'
 
@@ -112,7 +102,6 @@ export default {
     IconInnerShadowTop,
     IconBrandGithub,
     IconMail,
-    IconLogin,
     IconDownload
   },
   inject: ['baseUrl', 't'],

@@ -12,7 +12,7 @@ RSpec.describe 'Dashboard Page' do
     it 'shows empty state' do
       visit root_path
 
-      expect(page).to have_link('Create', href: new_template_path)
+      expect(page).to have_css("#templates_create_button[href='#{new_template_path}']")
     end
   end
 
@@ -37,16 +37,16 @@ RSpec.describe 'Dashboard Page' do
     end
 
     it 'initializes the template creation process' do
-      click_link 'Create'
+      find('#templates_create_button').click
 
       within('#modal') do
         fill_in 'template[name]', with: 'New Template'
+        template_count = Template.count
+        click_button 'Create'
 
-        expect do
-          click_button 'Create'
-        end.to change(Template, :count).by(1)
-
-        expect(page).to have_current_path(edit_template_path(Template.last), ignore_query: true)
+        created_template = Template.order(:id).last
+        expect(page).to have_current_path(edit_template_path(created_template), ignore_query: true)
+        expect(Template.count).to eq(template_count + 1)
       end
     end
 

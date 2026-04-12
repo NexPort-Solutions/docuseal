@@ -15,8 +15,8 @@
         <div class="flex items-center justify-center space-x-4 mr-1">
           <%= render 'shared/account_selector' %>
           <%= render 'shared/navbar_buttons' %>
-          <% if current_user.platform_admin? || current_user.account_admin_for?(current_account) %>
-            <%= link_to t('settings'), settings_account_path, class: 'hidden md:inline-flex font-medium text-lg', id: 'account_settings_button' %>
+          <% if current_user.platform_admin? || admin_managed_accounts.any? %>
+            <%= link_to t('settings'), settings_home_path, class: 'hidden md:inline-flex font-medium text-lg', id: 'account_settings_button' %>
           <% end %>
         </div>
       <% end %>

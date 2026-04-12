@@ -51,4 +51,38 @@ RSpec.describe 'Accounts' do
       expect(account.reload.archived_at).to be_nil
     end
   end
+
+  describe 'GET /settings/account' do
+    it 'does not show the dedicated SMS settings navigation entry' do
+      # Arrange
+      sign_in(account_admin)
+
+      # Initial Assert
+      expect(account_admin.account).to eq(account)
+
+      # Act
+      get settings_account_path
+
+      # Assert
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(%(href="#{settings_sms_path}"))
+    end
+  end
+
+  describe 'GET /settings/sms' do
+    it 'redirects back to account settings with the self-hosted SMS message' do
+      # Arrange
+      sign_in(account_admin)
+
+      # Initial Assert
+      expect(account_admin.account).to eq(account)
+
+      # Act
+      get settings_sms_path
+
+      # Assert
+      expect(response).to redirect_to(settings_account_path)
+      expect(flash[:alert]).to eq(I18n.t('sms_delivery_is_not_enabled_for_this_deployment'))
+    end
+  end
 end

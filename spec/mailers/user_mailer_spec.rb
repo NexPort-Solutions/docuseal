@@ -23,7 +23,7 @@ RSpec.describe UserMailer do
       mail = described_class.invitation_email(user)
 
       # Assert
-      expect(mail.from).to eq(['info@docuseal.com'])
+      expect(mail.from).to eq([Docuseal::SUPPORT_EMAIL])
       expect(mail[:from].display_names).to eq(['Northwind Notifications'])
       expect(mail.reply_to).to eq(['reply@northwind.example'])
     end
@@ -44,8 +44,41 @@ RSpec.describe UserMailer do
       mail = described_class.invitation_email(user)
 
       # Assert
+      expect(mail.from).to eq([Docuseal::SUPPORT_EMAIL])
       expect(mail[:from].display_names).to eq(['Northwind Health'])
       expect(mail.reply_to).to be_blank
+    end
+  end
+
+  describe 'Devise password reset mailer' do
+    it 'applies division branding and locale to reset password instructions' do
+      # Arrange
+      account = create(:account, locale: 'de')
+      create(:account_config,
+             account:,
+             key: AccountConfig::BRANDING_SETTINGS_KEY,
+             value: {
+               'display_name' => 'Nordwind Dokumente',
+               'sender_name' => 'Nordwind Benachrichtigungen',
+               'support_email' => 'support@nordwind.example',
+               'default_reply_to' => 'reply@nordwind.example'
+             })
+      user = create(:user, account:, first_name: 'Greta', email: 'greta@example.com')
+
+      # Initial Assert
+      expect(account.sender_name).to eq('Nordwind Benachrichtigungen')
+      expect(account.support_email).to eq('support@nordwind.example')
+      expect(account.default_reply_to).to eq('reply@nordwind.example')
+
+      # Act
+      mail = Devise::Mailer.reset_password_instructions(user, 'reset-token-123')
+
+      # Assert
+      expect(mail.from).to eq(['support@nordwind.example'])
+      expect(mail[:from].display_names).to eq(['Nordwind Benachrichtigungen'])
+      expect(mail.reply_to).to eq(['reply@nordwind.example'])
+      expect(mail.body.encoded).to include(I18n.t('change_my_password', locale: :de))
+      expect(mail.body.encoded).to include(I18n.t('hello_name', locale: :de, name: 'Greta'))
     end
   end
 end

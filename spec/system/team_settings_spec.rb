@@ -88,8 +88,11 @@ RSpec.describe 'Team Settings' do
           click_button 'Submit'
         end.not_to change(User, :count)
 
-        expect(page).to have_content('Email has already been taken')
+        expect(page).to have_no_content('Email has already been taken')
       end
+
+      expect(user.reload.can_access_account?(account)).to be(true)
+      expect(page).to have_content('User has been invited')
     end
 
     it 'does not allow to create a new user with an invalid email' do
@@ -129,9 +132,7 @@ RSpec.describe 'Team Settings' do
 
     it 'removes a user' do
       expect do
-        accept_confirm('Are you sure?') do
-          first(:button, 'Remove').click
-        end
+        first(:button, 'Remove').click
       end.to change { User.active.count }.by(-1)
 
       expect(page).to have_content('User has been removed')
@@ -150,7 +151,11 @@ RSpec.describe 'Team Settings' do
 
   context 'when some users are archived' do
     let!(:users) { create_list(:user, 2, account:) }
-    let!(:archived_users) { create_list(:user, 2, account:, archived_at: Time.current) }
+    let!(:archived_users) do
+      create_list(:user, 2, account:).each do |user|
+        user.update_column(:archived_at, Time.current)
+      end
+    end
     let!(:other_user) { create(:user) }
 
     it 'shows only active users' do

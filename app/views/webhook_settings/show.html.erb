@@ -26,17 +26,22 @@
                 <span><%= @webhook_url.secret.present? ? t('edit_secret') : t('add_secret') %></span>
               <% end %>
               <div class="tooltip tooltip-left md:tooltip-top" data-tip="<%= t('delete_webhook') %>">
-                <%= button_to settings_webhook_path(@webhook_url), class: 'btn btn-warning btn-sm', method: :delete, data: { turbo_confirm: t('are_you_sure_') } do %>
+              <%= button_to settings_webhook_path(@webhook_url), class: 'btn btn-warning btn-sm', method: :delete, data: { turbo_confirm: t('are_you_sure_') } do %>
                   <span><%= t('delete') %></span>
                 <% end %>
               </div>
             </div>
           <% end %>
         </div>
-        <%= form_for @webhook_url, url: @webhook_url.persisted? ? settings_webhook_path(@webhook_url) : settings_webhooks_path, html: { autocomplete: 'off' } do |f| %>
+        <%= form_for @webhook_url,
+                     url: @webhook_url.persisted? ? settings_webhook_path(@webhook_url) : settings_webhooks_path,
+                     data: { turbo: false },
+                     html: { autocomplete: 'off' } do |f| %>
           <div class="flex flex-row flex-wrap space-y-2 md:space-y-0 md:flex-nowrap md:space-x-2">
             <%= f.url_field :url, class: 'input font-mono input-bordered w-full', placeholder: 'https://example.com/hook', required: true %>
-            <%= f.button button_title(title: t('save'), disabled_with: t('saving')), class: 'base-button w-full md:w-32' %>
+            <%= f.button button_title(title: t('save'), disabled_with: t('saving')),
+                         id: 'webhook_settings_save_button',
+                         class: 'base-button w-full md:w-32' %>
           </div>
           <% unless @webhook_url.persisted? %>
             <div class="space-y-4 mt-4">
@@ -132,7 +137,11 @@
                 <%= t('submission_example_payload') %>
               </span>
               <% if @webhook_url.url.present? && @webhook_url.events.include?('form.completed') %>
-                <%= button_to button_title(title: 'Test Webhook', disabled_with: t('sending'), icon_disabled: svg_icon('loader', class: 'w-4 h-4 animate-spin')), settings_webhook_resend_path(@webhook_url), class: 'btn btn-neutral btn-outline btn-sm', method: :post %>
+                <%= button_to button_title(title: 'Test Webhook', disabled_with: t('sending'), icon_disabled: svg_icon('loader', class: 'w-4 h-4 animate-spin')),
+                              settings_webhook_resend_path(@webhook_url),
+                              class: 'btn btn-neutral btn-outline btn-sm',
+                              method: :post,
+                              form: { data: { turbo: false } } %>
               <% end %>
             </div>
           </div>

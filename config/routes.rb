@@ -165,6 +165,8 @@ Rails.application.routes.draw do
     resources :debug, only: %i[index], controller: 'submissions_debug' if Rails.env.development?
   end
 
+  get '/settings', to: 'settings_home#show', as: :settings_home
+
   scope '/settings', as: :settings do
     unless Docuseal.multitenant?
       resources :storage, only: %i[index create], controller: 'storage_settings'

@@ -62,14 +62,14 @@ RSpec.describe 'Webhook Settings' do
     fill_in 'webhook_url[url]', with: 'https://example.com/webhook'
 
     expect do
-      click_button 'Save'
+      find('#webhook_settings_save_button').click
     end.to change(WebhookUrl, :count).by(1)
 
     webhook_url = account.webhook_urls.first
 
     expect(webhook_url.url).to eq('https://example.com/webhook')
-    expect(page).to have_content('Webhook URL has been saved.')
     expect(page.current_path).to eq(settings_webhooks_path)
+    expect(page).to have_content('Webhook URL has been saved.')
   end
 
   it 'updates the webhook' do
@@ -78,13 +78,13 @@ RSpec.describe 'Webhook Settings' do
     visit settings_webhooks_path
 
     fill_in 'webhook_url[url]', with: 'https://example.org/webhook'
-    click_button 'Save'
+    find('#webhook_settings_save_button').click
 
     webhook_url.reload
 
     expect(webhook_url.url).to eq('https://example.org/webhook')
-    expect(page).to have_content('Webhook URL has been updated.')
     expect(page.current_path).to eq(settings_webhooks_path)
+    expect(page).to have_content('Webhook URL has been updated.')
   end
 
   it 'deletes the webhook' do

@@ -1,4 +1,6 @@
-<%= form_for config, url: settings_notifications_path, method: :post, html: { autocomplete: 'off', class: 'space-y-4' } do |f| %>
+<%= form_for config, url: settings_notifications_path, method: :post,
+             data: { turbo: false },
+             html: { autocomplete: 'off', class: 'space-y-4' } do |f| %>
   <%= f.hidden_field :key %>
   <div class="form-control">
     <%= f.label :value, class: 'label' do %>
@@ -14,6 +16,8 @@
     <%= tag.input type: 'email', multiple: true, name: 'account_config[value]', autocomplete: 'off', class: 'base-input', value: f.object.value %>
   </div>
   <div class="form-control pt-2">
-    <%= f.button button_title(title: t('save'), disabled_with: t('updating')), class: 'base-button' %>
+    <%= f.button button_title(title: t('save'), disabled_with: t('updating')),
+                 id: 'notifications_bcc_save_button',
+                 class: 'base-button' %>
   </div>
 <% end %>

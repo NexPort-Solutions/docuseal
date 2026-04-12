@@ -27,8 +27,9 @@ RSpec.describe 'Notifications Settings' do
 
       fill_in 'account_config[value]', with: 'john.doe@example.com'
 
-      all(:button, 'Save')[0].click
+      find('#notifications_bcc_save_button').click
 
+      expect(page).to have_current_path(settings_notifications_path, ignore_query: true)
       expect(page).to have_content('Changes have been saved')
 
       account_config = AccountConfig.find_by(account: user.account, key: AccountConfig::BCC_EMAILS)
@@ -45,8 +46,9 @@ RSpec.describe 'Notifications Settings' do
 
       fill_in 'account_config[value]', with: ''
 
-      all(:button, 'Save')[0].click
+      find('#notifications_bcc_save_button').click
 
+      expect(page).to have_current_path(settings_notifications_path, ignore_query: true)
       expect(page).to have_content('Changes have been saved')
     end
 
@@ -83,11 +85,12 @@ RSpec.describe 'Notifications Settings' do
       end
 
       expect do
-        all(:button, 'Save')[1].click
+        find('#notifications_reminder_save_button').click
       end.to change(AccountConfig, :count).by(1)
 
       account_config = AccountConfig.find_by(account: user.account, key: AccountConfig::SUBMITTER_REMINDERS)
 
+      expect(page).to have_current_path(settings_notifications_path, ignore_query: true)
       expect(page).to have_content('Changes have been saved')
 
       selected_values.each do |duration, value|

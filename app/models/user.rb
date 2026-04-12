@@ -79,6 +79,7 @@ class User < ApplicationRecord
          :omniauthable, omniauth_providers: [:google_oauth2]
 
   attribute :role, :string, default: ADMIN_ROLE
+  attribute :membership_role, :string, default: AccountAccess::CONTRIBUTOR_ROLE
   attribute :uuid, :string, default: -> { SecureRandom.uuid }
 
   scope :active, -> { where(archived_at: nil) }
@@ -185,7 +186,6 @@ class User < ApplicationRecord
     if membership_account
       updates = {}
       updates[:account_id] = membership_account.id if account_id != membership_account.id
-      updates[:archived_at] = nil if archived_at?
       update_columns(updates) if updates.present?
     elsif !platform_admin? && archived_at.blank?
       update_columns(archived_at: Time.current)

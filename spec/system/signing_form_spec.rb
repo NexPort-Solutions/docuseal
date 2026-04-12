@@ -1149,13 +1149,17 @@ RSpec.describe 'Signing Form' do
     end
 
     it 'sends completed email' do
+      expect(page).to have_field('First Name')
       fill_in 'First Name', with: 'Adam'
       click_on 'next'
+      expect(page).to have_css('canvas', visible: :all)
       draw_canvas
 
-      expect do
-        click_on 'Sign and Complete'
-      end.to change(ProcessSubmitterCompletionJob.jobs, :size).by(1)
+      job_count = ProcessSubmitterCompletionJob.jobs.size
+      click_on 'Sign and Complete'
+
+      expect(page).to have_content('Document has been signed!')
+      expect(ProcessSubmitterCompletionJob.jobs.size).to eq(job_count + 1)
     end
   end
 

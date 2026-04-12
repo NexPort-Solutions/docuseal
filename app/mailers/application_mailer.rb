@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class ApplicationMailer < ActionMailer::Base
-  default from: -> { branded_from_header }, reply_to: -> { branded_reply_to_header }
+  default from: ->(*) { branded_from_header }, reply_to: ->(*) { branded_reply_to_header }
   layout 'mailer'
 
   register_interceptor ActionMailerConfigsInterceptor
@@ -44,6 +44,7 @@ class ApplicationMailer < ActionMailer::Base
   def branding_mail_account
     account = @current_account if defined?(@current_account)
     account ||= @account if defined?(@account)
+    account ||= @resource&.account if defined?(@resource)
     account ||= @submitter&.account if defined?(@submitter)
     account ||= @template&.account if defined?(@template)
 
@@ -54,9 +55,9 @@ class ApplicationMailer < ActionMailer::Base
     account = branding_mail_account
 
     if account.present?
-      %("#{account.sender_name.delete('"')}" <info@docuseal.com>)
+      %("#{account.sender_name.delete('"')}" <#{account.support_email}>)
     else
-      'DocuSeal <info@docuseal.com>'
+      %("#{Docuseal.product_name.delete('"')}" <#{Docuseal::SUPPORT_EMAIL}>)
     end
   end
 

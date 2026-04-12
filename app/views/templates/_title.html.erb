@@ -49,7 +49,7 @@
             <% end %>
           </div>
         <% end %>
-        <%= link_to template_share_link_path(template), class: "absolute md:relative bottom-0 right-0 btn btn-xs md:btn-sm whitespace-nowrap btn-neutral text-white mt-1 px-2 #{'btn-disabled text-base-100' if template.variables_schema.present?}", data: { turbo_frame: :modal } do %>
+        <%= link_to template_share_link_path(template), id: 'template_share_link_button', class: "absolute md:relative bottom-0 right-0 btn btn-xs md:btn-sm whitespace-nowrap btn-neutral text-white mt-1 px-2 #{'btn-disabled text-base-100' if template.variables_schema.present?}", data: { turbo_frame: :modal } do %>
           <span class="flex items-center justify-center space-x-2">
             <%= svg_icon('link', class: 'w-4 h-4 md:w-6 md:h-6') %>
             <span><%= t('link') %></span>
@@ -60,7 +60,13 @@
   </div>
   <div class="flex flex-wrap gap-2 w-full md:w-fit md:justify-between md:flex-none md:pt-1">
     <% if !template.archived_at? && can?(:destroy, template) %>
-      <%= button_to button_title(title: t('archive'), disabled_with: t('archiving'), title_class: 'inline', icon: svg_icon('archive', class: 'w-6 h-6')), template_path(template), class: 'btn btn-outline btn-sm w-full', form_class: 'flex-1', method: :delete, data: { turbo_confirm: t('are_you_sure_') } %>
+      <%= button_to button_title(title: t('archive'), disabled_with: t('archiving'), title_class: 'inline', icon: svg_icon('archive', class: 'w-6 h-6')),
+                    template_path(template),
+                    id: 'template_archive_button',
+                    class: 'btn btn-outline btn-sm w-full',
+                    form: { class: 'flex-1', data: { turbo: false }, onsubmit: "return confirm('#{j t('are_you_sure_')}')" },
+                    method: :delete,
+                    data: {} %>
     <% end %>
     <% if can?(:create, current_account.templates.new(author: current_user)) %>
       <%= link_to new_template_clone_path(template), class: 'btn btn-outline btn-sm flex-1', data: { turbo_frame: :modal } do %>
@@ -72,7 +78,7 @@
     <% end %>
     <% if !template.archived_at? %>
       <% if can?(:update, template) %>
-        <%= link_to edit_template_path(template), class: 'btn btn-outline btn-sm flex-1' do %>
+        <%= link_to edit_template_path(template), id: 'template_edit_button', class: 'btn btn-outline btn-sm flex-1' do %>
           <span class="flex items-center justify-center space-x-2">
             <%= svg_icon('pencil', class: 'w-6 h-6') %>
             <span><%= t('edit') %></span>

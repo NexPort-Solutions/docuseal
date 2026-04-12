@@ -1,4 +1,4 @@
-<%= form_for @template, data: { turbo_frame: :_top }, html: { autocomplete: :off } do |f| %>
+<%= form_for @template, data: { turbo: false }, html: { autocomplete: :off } do |f| %>
   <div class="form-control mt-4">
     <%= f.text_field :name, required: true, placeholder: t('document_name'), class: 'base-input', dir: 'auto' %>
   </div>

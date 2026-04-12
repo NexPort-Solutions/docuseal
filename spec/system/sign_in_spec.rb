@@ -40,6 +40,7 @@ RSpec.describe 'Sign In' do
       fill_in 'Two-Factor Code from Authenticator App', with: user.current_otp
       click_button 'Sign In'
 
+      expect(page).to have_current_path(root_path, ignore_query: true)
       expect(page).to have_content('Signed in successfully')
       expect(page).to have_content('Document Templates')
     end
@@ -51,6 +52,7 @@ RSpec.describe 'Sign In' do
       fill_in 'Two-Factor Code from Authenticator App', with: '123456'
       click_button 'Sign In'
 
+      expect(page).to have_current_path(new_user_session_path, ignore_query: true)
       expect(page).to have_content('Invalid Email or password')
       expect(page).not_to have_content('Document Templates')
     end

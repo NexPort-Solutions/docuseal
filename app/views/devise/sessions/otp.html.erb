@@ -8,7 +8,7 @@
       <span><%= local_assigns[:access_error] %></span>
     </div>
   <% else %>
-    <%= form_for(resource, as: resource_name, html: { class: 'space-y-6' }, data: { turbo: params[:redir].blank? }, url: session_path(resource_name)) do |f| %>
+    <%= form_for(resource, as: resource_name, html: { class: 'space-y-6' }, data: { turbo: false }, url: session_path(resource_name)) do |f| %>
       <%= f.hidden_field :email %>
       <%= f.hidden_field :password %>
       <% if params[:redir].present? %>

@@ -24,7 +24,7 @@ RSpec.describe 'Account Settings' do
     select '(GMT+01:00) Berlin', from: 'Time zone'
     select 'Español', from: 'Language'
 
-    click_button 'Update'
+    find('#account_settings_update_button').click
 
     account.reload
     encrypted_config.reload
@@ -38,12 +38,13 @@ RSpec.describe 'Account Settings' do
   it 'changes the account language' do
     select 'Deutsch', from: 'Language'
 
-    click_button 'Update'
+    find('#account_settings_update_button').click
 
     account.reload
     encrypted_config.reload
 
     expect(account.locale).to eq('de-DE')
+    expect(page).to have_current_path(settings_account_path, ignore_query: true)
     expect(page).to have_content('Konto')
     expect(page).to have_field('Firmenname', with: account.name)
     expect(page).to have_field('Zeitzone', with: account.timezone)

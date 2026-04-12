@@ -87,12 +87,14 @@
                   <% end %>
                 <% end %>
                 <% if params[:status] != 'archived' && can?(:destroy, user) && user != current_user %>
-                  <%= button_to user_path(user), method: :delete, class: 'btn btn-outline btn-error btn-xs', title: t('remove'), data: { turbo_confirm: t('are_you_sure_') } do %>
+                  <%= button_to user_path(user), method: :delete, class: 'btn btn-outline btn-error btn-xs', title: t('remove'),
+                                form: { data: { turbo: false }, onsubmit: "return confirm('#{j t('are_you_sure_')}')" } do %>
                     <%= t('remove') %>
                   <% end %>
                 <% end %>
                 <% if params[:status] == 'archived' && can?(:create, user) && user != current_user && user.archived_at? %>
-                  <%= button_to user_path(user), method: :put, params: { user: { archived_at: nil } }, class: 'btn btn-outline btn-xs', title: t('unarchive'), data: { turbo_confirm: t('are_you_sure_') } do %>
+                  <%= button_to user_path(user), method: :put, params: { user: { archived_at: nil } }, class: 'btn btn-outline btn-xs', title: t('unarchive'),
+                                form: { data: { turbo: false }, onsubmit: "return confirm('#{j t('are_you_sure_')}')" } do %>
                     <%= t('unarchive') %>
                   <% end %>
                 <% end %>

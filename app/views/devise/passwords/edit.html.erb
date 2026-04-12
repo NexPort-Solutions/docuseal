@@ -2,7 +2,9 @@
   <h1 class="text-4xl font-bold text-center mt-8">
     <%= t('change_your_password') %>
   </h1>
-  <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put, class: 'space-y-6' }) do |f| %>
+  <%= form_for(resource, as: resource_name, url: password_path(resource_name),
+               data: { turbo: false },
+               html: { method: :put, class: 'space-y-6' }) do |f| %>
     <div class="space-y-2">
       <%= render 'devise/shared/error_messages', resource: %>
       <%= f.hidden_field :reset_password_token %>

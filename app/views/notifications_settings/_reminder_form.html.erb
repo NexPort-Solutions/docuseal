@@ -1,4 +1,6 @@
-<%= form_for config, url: settings_notifications_path, method: :post, html: { autocomplete: 'off', class: 'space-y-4' } do |f| %>
+<%= form_for config, url: settings_notifications_path, method: :post,
+             data: { turbo: false },
+             html: { autocomplete: 'off', class: 'space-y-4' } do |f| %>
   <%= f.hidden_field :key %>
   <div class="form-control">
     <% record = Struct.new(:first_duration, :second_duration, :third_duration).new(*(f.object.value || {}).values_at('first_duration', 'second_duration', 'third_duration')) %>
@@ -25,6 +27,8 @@
     </div>
   </div>
   <div class="form-control pt-4">
-    <%= f.button button_title(title: t('save'), disabled_with: t('updating')), class: 'base-button' %>
+    <%= f.button button_title(title: t('save'), disabled_with: t('updating')),
+                 id: 'notifications_reminder_save_button',
+                 class: 'base-button' %>
   </div>
 <% end %>

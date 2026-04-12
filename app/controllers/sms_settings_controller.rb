@@ -5,7 +5,9 @@ class SmsSettingsController < ApplicationController
   authorize_resource :encrypted_config, only: :index
   authorize_resource :encrypted_config, parent: false, except: :index
 
-  def index; end
+  def index
+    redirect_to settings_account_path, alert: I18n.t('sms_delivery_is_not_enabled_for_this_deployment')
+  end
 
   private
 

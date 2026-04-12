@@ -98,6 +98,10 @@ module Api
       current_user&.account
     end
 
+    def current_ability
+      @current_ability ||= Ability.new(current_user, current_account:)
+    end
+
     def set_noindex_headers
       headers['X-Robots-Tag'] = 'noindex'
     end

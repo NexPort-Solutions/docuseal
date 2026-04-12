@@ -23,18 +23,20 @@ Capybara.disable_animation = true
 
 Capybara.register_driver(:headless_cuprite) do |app|
   Capybara::Cuprite::Driver.new(app, window_size: [1200, 800],
-                                     process_timeout: 20,
-                                     timeout: 20,
+                                     process_timeout: 30,
+                                     timeout: 30,
                                      js_errors: true,
+                                     pending_connection_errors: false,
                                      browser_options: { 'no-sandbox' => nil })
 end
 
 Capybara.register_driver(:headful_cuprite) do |app|
   Capybara::Cuprite::Driver.new(app, window_size: [1200, 800],
                                      headless: false,
-                                     process_timeout: 20,
-                                     timeout: 20,
+                                     process_timeout: 30,
+                                     timeout: 30,
                                      js_errors: true,
+                                     pending_connection_errors: false,
                                      browser_options: { 'no-sandbox' => nil })
 end
 

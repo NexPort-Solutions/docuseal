@@ -29,7 +29,7 @@ class UsersController < ApplicationController
       if existing_user.can_access_account?(current_account)
         @user.errors.add(:email, I18n.t('already_exists'))
 
-        return render turbo_stream: turbo_stream.replace(:modal, template: 'users/new'), status: :unprocessable_content
+        return render_user_form(:new)
       end
 
       existing_user.archived_at = nil
@@ -45,7 +45,7 @@ class UsersController < ApplicationController
 
       redirect_back fallback_location: settings_users_path, notice: I18n.t('user_has_been_invited')
     else
-      render turbo_stream: turbo_stream.replace(:modal, template: 'users/new'), status: :unprocessable_content
+      render_user_form(:new)
     end
   end
 
@@ -67,7 +67,7 @@ class UsersController < ApplicationController
         redirect_back fallback_location: settings_users_path, notice: I18n.t('user_has_been_updated')
       end
     else
-      render turbo_stream: turbo_stream.replace(:modal, template: 'users/edit'), status: :unprocessable_content
+      render_user_form(:edit)
     end
   end
 
@@ -76,8 +76,14 @@ class UsersController < ApplicationController
       return redirect_to settings_users_path, notice: I18n.t('unable_to_remove_user')
     end
 
-    @user.account_accesses.find_by!(account: current_account).destroy!
-    @user.sync_membership_state!
+    membership = @user.account_accesses.find_by!(account: current_account)
+
+    if @user.account_accesses.one? && !@user.platform_admin?
+      @user.update!(archived_at: Time.current)
+    else
+      membership.destroy!
+      @user.sync_membership_state!
+    end
 
     redirect_back fallback_location: settings_users_path, notice: I18n.t('user_has_been_removed')
   end
@@ -113,6 +119,14 @@ class UsersController < ApplicationController
 
   def ensure_manage_current_account!
     authorize!(:manage, current_account)
+  end
+
+  def render_user_form(template)
+    if turbo_frame_request?
+      render turbo_stream: turbo_stream.replace(:modal, template: "users/#{template}"), status: :unprocessable_content
+    else
+      render template, layout: false, status: :unprocessable_content
+    end
   end
 
   def upsert_membership!(user)

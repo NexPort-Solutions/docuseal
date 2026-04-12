@@ -194,13 +194,12 @@
             </span>
           </button>
         </form>
-        <a
+        <div
           v-if="!isConnected"
-          class="block link text-center mt-1"
-          href="https://www.docuseal.com/blog/accept-payments-and-request-signatures-with-ease"
-          target="_blank"
-          data-turbo="false"
-        >{{ t('learn_more') }}</a>
+          class="block text-center mt-1 text-xs text-base-content/70"
+        >
+          Connect Stripe to accept payments in this deployment.
+        </div>
       </div>
       <li
         class="field-settings-formula mb-1"

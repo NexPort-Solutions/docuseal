@@ -42,16 +42,15 @@ RSpec.describe 'Template' do
 
     it 'archives a template' do
       expect do
-        accept_confirm('Are you sure?') do
-          click_button 'Archive'
-        end
+        find('#template_archive_button').click
       end.to change { Template.active.count }.by(-1)
 
+      expect(page).to have_current_path(template_path(template), ignore_query: true)
       expect(page).to have_content('Template has been archived')
     end
 
     it 'edits a template' do
-      click_link 'Edit'
+      find('#template_edit_button').click
 
       expect(page).to have_current_path(edit_template_path(template), ignore_query: true)
     end
@@ -61,15 +60,14 @@ RSpec.describe 'Template' do
 
       within '#modal' do
         fill_in 'template[name]', with: 'New Template Name'
+        template_count = Template.active.count
+        click_button 'Submit'
 
-        expect do
-          click_button 'Submit'
-        end.to change { Template.active.count }.by(1)
+        cloned_template = Template.last
 
-        template = Template.last
-
-        expect(template.name).to eq('New Template Name')
-        expect(page).to have_current_path(edit_template_path(template), ignore_query: true)
+        expect(page).to have_current_path(edit_template_path(cloned_template), ignore_query: true)
+        expect(Template.active.count).to eq(template_count + 1)
+        expect(cloned_template.name).to eq('New Template Name')
       end
     end
 
@@ -80,16 +78,17 @@ RSpec.describe 'Template' do
         fill_in 'template[name]', with: 'New Template Name'
         find('label', text: 'Change Folder').click
         fill_in 'folder_name', with: 'New Folder Name'
+        template_count = Template.active.count
+        folder_count = TemplateFolder.active.count
+        click_button 'Submit'
 
-        expect do
-          click_button 'Submit'
-        end.to change { Template.active.count }.by(1).and change { TemplateFolder.active.count }.by(1)
+        cloned_template = Template.last
 
-        template = Template.last
-
-        expect(template.name).to eq('New Template Name')
-        expect(template.folder.name).to eq('New Folder Name')
-        expect(page).to have_current_path(edit_template_path(template), ignore_query: true)
+        expect(page).to have_current_path(edit_template_path(cloned_template), ignore_query: true)
+        expect(Template.active.count).to eq(template_count + 1)
+        expect(TemplateFolder.active.count).to eq(folder_count + 1)
+        expect(cloned_template.name).to eq('New Template Name')
+        expect(cloned_template.folder.name).to eq('New Folder Name')
       end
     end
 
@@ -108,16 +107,16 @@ RSpec.describe 'Template' do
         find('div', text: template_folder.name).click
       end
 
+      folder_count = TemplateFolder.active.count
       within '#modal' do
-        expect do
-          click_button 'Submit'
-        end.not_to(change { TemplateFolder.active.count })
+        click_button 'Submit'
       end
 
-      template = Template.last
-      expect(template.name).to eq('New Template Name')
-      expect(template.folder.name).to eq(template_folder.name)
-      expect(page).to have_current_path(edit_template_path(template), ignore_query: true)
+      cloned_template = Template.last
+      expect(page).to have_current_path(edit_template_path(cloned_template), ignore_query: true)
+      expect(TemplateFolder.active.count).to eq(folder_count)
+      expect(cloned_template.name).to eq('New Template Name')
+      expect(cloned_template.folder.name).to eq(template_folder.name)
     end
 
     it 'moves a template' do
@@ -187,6 +186,8 @@ RSpec.describe 'Template' do
         fill_in 'To', with: I18n.l(6.days.ago, format: '%Y-%m-%d')
         click_button 'Apply'
       end
+
+      expect(page).to have_current_path(/created_at_from=.*created_at_to=/, url: true)
 
       last_week_submissions.map(&:submitters).flatten.uniq.each do |submitter|
         expect(page).to have_content(submitter.name)

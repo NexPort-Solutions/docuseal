@@ -41,7 +41,7 @@ class SubmittersController < ApplicationController
     assign_submitter_attrs(@submitter, submitter_params)
 
     if @submitter.save
-      maybe_resend_email_sms(@submitter, params)
+      maybe_resend_email(@submitter, params)
 
       SearchEntries.enqueue_reindex(@submitter)
 
@@ -53,7 +53,7 @@ class SubmittersController < ApplicationController
 
   private
 
-  def maybe_resend_email_sms(submitter, params)
+  def maybe_resend_email(submitter, params)
     if params[:send_email] == '1' && submitter.email.present?
       is_sent_recently = Docuseal.multitenant? &&
                          EmailEvent.exists?(email: submitter.email,
@@ -64,11 +64,6 @@ class SubmittersController < ApplicationController
 
       SendSubmitterInvitationEmailJob.perform_async('submitter_id' => submitter.id) unless is_sent_recently
     end
-
-    return if submitter.phone.blank?
-    return unless params[:send_sms] == '1'
-
-    SendSubmitterInvitationSmsJob.perform_async('submitter_id' => submitter.id)
   end
 
   def assign_submitter_attrs(submitter, attrs)
