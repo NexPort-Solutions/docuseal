@@ -23,9 +23,9 @@ RSpec.describe BackfillGlobalConfigs do
     allow(relation).to receive(:find_by).and_wrap_original do |original, **args|
       record = original.call(**args)
 
-      if args[:key] == broken_config.key
-        allow(record).to receive(:value).and_raise(OpenSSL::Cipher::AuthTagError)
-      end
+      next record unless args[:key] == broken_config.key
+
+      allow(record).to receive(:value).and_raise(ActiveRecord::Encryption::Errors::Decryption)
 
       record
     end

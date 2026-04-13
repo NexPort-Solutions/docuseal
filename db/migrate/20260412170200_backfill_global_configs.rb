@@ -38,7 +38,11 @@ class BackfillGlobalConfigs < ActiveRecord::Migration[8.0]
 
   def read_encrypted_value(encrypted_config)
     encrypted_config.value
-  rescue OpenSSL::Cipher::CipherError, OpenSSL::Cipher::AuthTagError, JSON::ParserError => e
+  rescue OpenSSL::Cipher::CipherError,
+         OpenSSL::Cipher::AuthTagError,
+         ActiveRecord::Encryption::Errors::Decryption,
+         ActiveSupport::MessageEncryptor::InvalidMessage,
+         JSON::ParserError => e
     say "Skipping encrypted config #{encrypted_config.key} for account #{encrypted_config.account_id}: #{e.class}", true
 
     nil
