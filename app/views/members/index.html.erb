@@ -1,0 +1,54 @@
+<div class="flex-wrap space-y-4 md:flex md:flex-nowrap md:space-y-0 md:space-x-10">
+  <%= render 'shared/settings_nav' %>
+  <div class="md:flex-grow">
+    <div class="flex flex-col md:flex-row md:flex-wrap gap-2 md:justify-between md:items-end mb-4 min-h-12">
+      <h1 class="text-4xl font-bold"><%= t('members') %></h1>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="table w-full table-lg rounded-b-none overflow-hidden">
+        <thead class="bg-base-200">
+          <tr class="text-neutral uppercase">
+            <th><%= t('name') %></th>
+            <th><%= t('email') %></th>
+            <th><%= t('account_role') %></th>
+            <th><%= t('last_session') %></th>
+            <th class="text-right" width="1px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @members.each do |member| %>
+            <tr scope="row">
+              <td><%= member.full_name %></td>
+              <td><%= member.email %></td>
+              <td>
+                <span class="badge badge-info badge-outline whitespace-nowrap">
+                  <%= t(member.account_access_for(current_account)&.role || member.role) %>
+                </span>
+                <% if member.platform_admin? %>
+                  <span class="badge badge-outline whitespace-nowrap mt-1"><%= t('platform_admin') %></span>
+                <% end %>
+              </td>
+              <td>
+                <%= member.current_sign_in_at ? l(member.current_sign_in_at.in_time_zone(current_account.timezone), format: :short, locale: current_account.locale) : '-' %>
+              </td>
+              <td class="flex items-center space-x-2 justify-end">
+                <%= link_to edit_member_path(member), class: 'btn btn-outline btn-xs', title: t('edit'), data: { turbo_frame: 'modal' } do %>
+                  <%= t('edit') %>
+                <% end %>
+                <% if member != current_user %>
+                  <%= button_to member_path(member), method: :delete, class: 'btn btn-outline btn-error btn-xs', title: t('remove'),
+                                form: { data: { turbo: false }, onsubmit: "return confirm('#{j t('are_you_sure_')}')" } do %>
+                    <%= t('remove') %>
+                  <% end %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <% if @pagy.pages > 1 %>
+      <%= render 'shared/pagination', pagy: @pagy, items_name: 'members' %>
+    <% end %>
+  </div>
+</div>

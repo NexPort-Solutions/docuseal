@@ -2,7 +2,7 @@
 
 RSpec.describe 'Storage Settings' do
   let!(:account) { create(:account) }
-  let!(:user) { create(:user, account:) }
+  let!(:user) { create(:user, account:, role: User::PLATFORM_ADMIN_ROLE) }
 
   before do
     sign_in(user)
@@ -10,7 +10,7 @@ RSpec.describe 'Storage Settings' do
 
   context 'when storage settings are not set' do
     before do
-      visit settings_storage_index_path
+      visit admin_storage_index_path
     end
 
     context 'when Disk is selected' do
@@ -34,9 +34,9 @@ RSpec.describe 'Storage Settings' do
 
         expect do
           click_button 'Save'
-        end.to change(EncryptedConfig, :count).by(1)
+        end.to change(GlobalEncryptedConfig, :count).by(1)
 
-        encrypted_config = EncryptedConfig.find_by(account:, key: EncryptedConfig::FILES_STORAGE_KEY)
+        encrypted_config = GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::FILES_STORAGE_KEY)
         configs = encrypted_config.value['configs']
 
         expect(encrypted_config.value['service']).to eq('aws_s3')
@@ -58,9 +58,9 @@ RSpec.describe 'Storage Settings' do
 
         expect do
           click_button 'Save'
-        end.to change(EncryptedConfig, :count).by(1)
+        end.to change(GlobalEncryptedConfig, :count).by(1)
 
-        encrypted_config = EncryptedConfig.find_by(account:, key: EncryptedConfig::FILES_STORAGE_KEY)
+        encrypted_config = GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::FILES_STORAGE_KEY)
         configs = encrypted_config.value['configs']
 
         expect(encrypted_config.value['service']).to eq('google')
@@ -80,9 +80,9 @@ RSpec.describe 'Storage Settings' do
 
         expect do
           click_button 'Save'
-        end.to change(EncryptedConfig, :count).by(1)
+        end.to change(GlobalEncryptedConfig, :count).by(1)
 
-        encrypted_config = EncryptedConfig.find_by(account:, key: EncryptedConfig::FILES_STORAGE_KEY)
+        encrypted_config = GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::FILES_STORAGE_KEY)
         configs = encrypted_config.value['configs']
 
         expect(encrypted_config.value['service']).to eq('azure')
@@ -97,7 +97,7 @@ RSpec.describe 'Storage Settings' do
     context 'when updates the same storage settings' do
       context 'when AWS S3' do
         let!(:encrypted_config) do
-          create(:encrypted_config, account:, key: EncryptedConfig::FILES_STORAGE_KEY, value: {
+          create(:global_encrypted_config, key: GlobalEncryptedConfig::FILES_STORAGE_KEY, value: {
                    service: 'aws_s3',
                    configs: {
                      access_key_id: 'access_key_id',
@@ -110,7 +110,7 @@ RSpec.describe 'Storage Settings' do
         end
 
         it 'updates AWS S3 storage settings' do
-          visit settings_storage_index_path
+          visit admin_storage_index_path
 
           fill_in 'Access key ID', with: 'new_access_key_id'
           fill_in 'Secret access key', with: 'new_secret_access_key'
@@ -120,7 +120,7 @@ RSpec.describe 'Storage Settings' do
 
           expect do
             click_button 'Save'
-          end.not_to(change(EncryptedConfig, :count))
+          end.not_to(change(GlobalEncryptedConfig, :count))
 
           encrypted_config.reload
           configs = encrypted_config.value['configs']
@@ -136,7 +136,7 @@ RSpec.describe 'Storage Settings' do
 
       context 'when Google Cloud Storage' do
         let!(:encrypted_config) do
-          create(:encrypted_config, account:, key: EncryptedConfig::FILES_STORAGE_KEY, value: {
+          create(:global_encrypted_config, key: GlobalEncryptedConfig::FILES_STORAGE_KEY, value: {
                    service: 'google',
                    configs: {
                      project: 'project_id',
@@ -147,7 +147,7 @@ RSpec.describe 'Storage Settings' do
         end
 
         it 'updates Google Cloud Storage settings' do
-          visit settings_storage_index_path
+          visit admin_storage_index_path
 
           fill_in 'Project', with: 'new_project_id'
           fill_in 'Bucket', with: 'new_bucket'
@@ -156,7 +156,7 @@ RSpec.describe 'Storage Settings' do
 
           expect do
             click_button 'Save'
-          end.not_to(change(EncryptedConfig, :count))
+          end.not_to(change(GlobalEncryptedConfig, :count))
 
           encrypted_config.reload
           configs = encrypted_config.value['configs']
@@ -170,7 +170,7 @@ RSpec.describe 'Storage Settings' do
 
       context 'when Azure' do
         let!(:encrypted_config) do
-          create(:encrypted_config, account:, key: EncryptedConfig::FILES_STORAGE_KEY, value: {
+          create(:global_encrypted_config, key: GlobalEncryptedConfig::FILES_STORAGE_KEY, value: {
                    service: 'azure',
                    configs: {
                      storage_account_name: 'storage_account_name',
@@ -181,7 +181,7 @@ RSpec.describe 'Storage Settings' do
         end
 
         it 'updates Azure storage settings' do
-          visit settings_storage_index_path
+          visit admin_storage_index_path
 
           fill_in 'Storage Account Name', with: 'new_storage_account_name'
           fill_in 'Container', with: 'new_container'
@@ -189,7 +189,7 @@ RSpec.describe 'Storage Settings' do
 
           expect do
             click_button 'Save'
-          end.not_to(change(EncryptedConfig, :count))
+          end.not_to(change(GlobalEncryptedConfig, :count))
 
           encrypted_config.reload
           configs = encrypted_config.value['configs']
@@ -205,7 +205,7 @@ RSpec.describe 'Storage Settings' do
     context 'when switches to another storage settings' do
       context 'when Google Cloud Storage' do
         let!(:encrypted_config) do
-          create(:encrypted_config, account:, key: EncryptedConfig::FILES_STORAGE_KEY, value: {
+          create(:global_encrypted_config, key: GlobalEncryptedConfig::FILES_STORAGE_KEY, value: {
                    service: 'google',
                    configs: {
                      project: 'project_id',
@@ -216,7 +216,7 @@ RSpec.describe 'Storage Settings' do
         end
 
         it 'switches to AWS S3' do
-          visit settings_storage_index_path
+          visit admin_storage_index_path
           choose 'AWS'
 
           fill_in 'Access key ID', with: 'access_key_id'
@@ -227,7 +227,7 @@ RSpec.describe 'Storage Settings' do
 
           expect do
             click_button 'Save'
-          end.not_to(change(EncryptedConfig, :count))
+          end.not_to(change(GlobalEncryptedConfig, :count))
 
           encrypted_config.reload
           configs = encrypted_config.value['configs']

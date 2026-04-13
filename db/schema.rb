@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_11_010100) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_12_170200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gin"
   enable_extension "pg_catalog.plpgsql"
@@ -239,6 +239,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_11_010100) do
     t.text "value", null: false
     t.index ["user_id", "key"], name: "index_encrypted_user_configs_on_user_id_and_key", unique: true
     t.index ["user_id"], name: "index_encrypted_user_configs_on_user_id"
+  end
+
+  create_table "global_configs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "key", null: false
+    t.datetime "updated_at", null: false
+    t.text "value", null: false
+    t.index ["key"], name: "index_global_configs_on_key", unique: true
+  end
+
+  create_table "global_encrypted_configs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "key", null: false
+    t.datetime "updated_at", null: false
+    t.text "value", null: false
+    t.index ["key"], name: "index_global_encrypted_configs_on_key", unique: true
   end
 
   create_table "lock_events", force: :cascade do |t|

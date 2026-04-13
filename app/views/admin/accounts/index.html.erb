@@ -1,0 +1,33 @@
+<div class="flex flex-wrap space-y-4 md:flex-nowrap md:space-y-0 md:space-x-10">
+  <%= render 'shared/admin_nav' %>
+  <div class="flex-grow max-w-4xl mx-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-4xl font-bold"><%= t('accounts') %></h1>
+      <%= link_to t('add_account'), new_admin_account_path, class: 'base-button' %>
+    </div>
+
+    <div class="space-y-4">
+      <% @accounts.each do |account| %>
+        <div class="border border-base-300 rounded-box p-4 flex items-start justify-between gap-4">
+          <div>
+            <div class="font-semibold text-lg"><%= account.branded_name %></div>
+            <div class="text-sm text-gray-600"><%= account.name %></div>
+            <div class="text-sm text-gray-600"><%= account.members.active.count %> <%= t('members').downcase %></div>
+            <% if account.archived_at? %>
+              <div class="badge badge-warning mt-2"><%= t('archived') %></div>
+            <% end %>
+          </div>
+          <div class="flex flex-wrap gap-2 justify-end">
+            <%= link_to t('edit'), edit_admin_account_path(account), class: 'btn btn-sm' %>
+            <%= button_to t('support'), impersonate_admin_account_path(account), method: :post, class: 'btn btn-sm btn-outline' %>
+            <% if account.archived_at? %>
+              <%= button_to t('restore'), restore_admin_account_path(account), method: :post, class: 'btn btn-sm btn-outline' %>
+            <% else %>
+              <%= button_to t('archive'), archive_admin_account_path(account), method: :post, class: 'btn btn-sm btn-outline btn-warning' %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

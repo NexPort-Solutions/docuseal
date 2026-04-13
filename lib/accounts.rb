@@ -117,7 +117,9 @@ module Accounts
         return Docuseal.default_pkcs if Docuseal::CERTS.present?
 
         EncryptedConfig.find_by(account:, key: EncryptedConfig::ESIGN_CERTS_KEY)&.value ||
-          EncryptedConfig.find_by(key: EncryptedConfig::ESIGN_CERTS_KEY).value
+          GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::ESIGN_CERTS_KEY)&.value ||
+          EncryptedConfig.find_by(key: EncryptedConfig::ESIGN_CERTS_KEY)&.value ||
+          generated_cert_data
       end
 
     if (default_cert = cert_data['custom']&.find { |e| e['status'] == 'default' })
@@ -138,8 +140,7 @@ module Accounts
       url = EncryptedConfig.find_by(account:, key: EncryptedConfig::TIMESTAMP_SERVER_URL_KEY)&.value
 
       unless Docuseal.multitenant?
-        url ||=
-          Account.order(:id).first.encrypted_configs.find_by(key: EncryptedConfig::TIMESTAMP_SERVER_URL_KEY)&.value
+        url ||= GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::TIMESTAMP_SERVER_URL_KEY)&.value
       end
 
       url
@@ -155,7 +156,10 @@ module Accounts
       elsif Docuseal::CERTS.present?
         Docuseal::CERTS
       else
-        EncryptedConfig.find_by(key: EncryptedConfig::ESIGN_CERTS_KEY)&.value || {}
+        EncryptedConfig.find_by(account:, key: EncryptedConfig::ESIGN_CERTS_KEY)&.value ||
+          GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::ESIGN_CERTS_KEY)&.value ||
+          EncryptedConfig.find_by(key: EncryptedConfig::ESIGN_CERTS_KEY)&.value ||
+          generated_cert_data
       end
 
     default_pkcs = GenerateCertificate.load_pkcs(cert_data)
@@ -173,11 +177,13 @@ module Accounts
      *Docuseal.trusted_certs]
   end
 
-  def can_send_emails?(_account, **_params)
+  def can_send_emails?(account, **_params)
     return true if Docuseal.multitenant?
     return true if ENV['SMTP_ADDRESS'].present?
 
-    EncryptedConfig.exists?(key: EncryptedConfig::EMAIL_SMTP_KEY)
+    GlobalEncryptedConfig.exists?(key: GlobalEncryptedConfig::EMAIL_SMTP_KEY) ||
+      EncryptedConfig.exists?(account:, key: EncryptedConfig::EMAIL_SMTP_KEY) ||
+      EncryptedConfig.exists?(key: EncryptedConfig::EMAIL_SMTP_KEY)
   end
 
   def can_send_invitation_emails?(_account)
@@ -197,5 +203,9 @@ module Accounts
                                                   key: AccountConfig::DOWNLOAD_LINKS_EXPIRE_KEY).value == false
 
     LINK_EXPIRES_AT.from_now
+  end
+
+  def generated_cert_data
+    @generated_cert_data ||= GenerateCertificate.call.transform_values(&:to_pem)
   end
 end

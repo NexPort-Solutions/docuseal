@@ -18,19 +18,9 @@ class AccountsController < ApplicationController
   def show; end
 
   def update
-    load_app_url_config
-
-    if @encrypted_config.present? && !valid_http_url?(@encrypted_config.value.to_s)
-      @encrypted_config.errors.add(:value, I18n.t('should_be_a_valid_url'))
-
-      return render :show, status: :unprocessable_content
-    end
-
     current_account.update!(account_params)
     update_branding!
     attach_logo!
-    @encrypted_config&.save!
-    Docuseal.refresh_default_url_options! if @encrypted_config.present?
 
     with_locale do
       redirect_to settings_account_path, notice: I18n.t('account_information_has_been_updated')
@@ -63,26 +53,6 @@ class AccountsController < ApplicationController
 
   def account_params
     params.require(:account).permit(:name, :timezone, :locale)
-  end
-
-  def app_url_params
-    return {} if params[:encrypted_config].blank?
-
-    params.require(:encrypted_config).permit(:value)
-  end
-
-  def load_app_url_config
-    return if Docuseal.multitenant? || app_url_params.blank?
-
-    @encrypted_config = EncryptedConfig.find_or_initialize_by(account: current_account,
-                                                              key: EncryptedConfig::APP_URL_KEY)
-    @encrypted_config.assign_attributes(app_url_params)
-  end
-
-  def valid_http_url?(value)
-    URI.parse(value).class.in?([URI::HTTP, URI::HTTPS])
-  rescue URI::InvalidURIError
-    false
   end
 
   def branding_params

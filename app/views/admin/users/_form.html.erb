@@ -1,0 +1,59 @@
+<%= form_for [:admin, user], html: { class: 'space-y-4' }, data: { turbo: false } do |f| %>
+  <div class="space-y-4">
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="form-control">
+        <%= f.label :first_name, t('first_name'), class: 'label' %>
+        <%= f.text_field :first_name, required: true, class: 'base-input', dir: 'auto' %>
+      </div>
+      <div class="form-control">
+        <%= f.label :last_name, t('last_name'), class: 'label' %>
+        <%= f.text_field :last_name, required: true, class: 'base-input', dir: 'auto' %>
+      </div>
+    </div>
+    <div class="form-control">
+      <%= f.label :email, t('email'), class: 'label' %>
+      <%= f.email_field :email, required: true, class: 'base-input' %>
+    </div>
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="form-control">
+        <%= f.label :password, t('password'), class: 'label' %>
+        <%= f.password_field :password, class: 'base-input' %>
+      </div>
+      <div class="form-control">
+        <%= f.label :role, t('role'), class: 'label' %>
+        <%= f.select :role, options_for_select(User::ROLES.map { |role| [t(role), role] }, user.role), {}, class: 'base-select' %>
+      </div>
+    </div>
+    <% if user.persisted? && Accounts.can_send_emails?(current_account) %>
+      <span class="label-text-alt mt-2 mx-1">
+        <%= t('click_here_to_send_a_reset_password_email_html') %>
+      </span>
+    <% end %>
+
+    <div class="border-t border-base-300 pt-4 space-y-3">
+      <h2 class="text-2xl font-bold"><%= t('account_memberships') %></h2>
+      <% Account.active.order(:name).each do |account| %>
+        <% membership = user.account_access_for(account) %>
+        <div class="border border-base-300 rounded-box p-3 space-y-3">
+          <label class="flex items-center justify-between gap-4">
+            <span class="font-medium"><%= account.branded_name %></span>
+            <%= check_box_tag "user[memberships][#{account.id}][selected]", '1', membership.present?, class: 'toggle' %>
+          </label>
+          <div class="form-control">
+            <%= label_tag "user_memberships_#{account.id}_role", t('account_role'), class: 'label' %>
+            <%= select_tag "user[memberships][#{account.id}][role]",
+                           options_for_select(AccountAccess::ROLES.map { |role| [t(role), role] }, membership&.role || AccountAccess::CONTRIBUTOR_ROLE),
+                           class: 'base-select',
+                           id: "user_memberships_#{account.id}_role" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  <div class="form-control pt-2">
+    <%= f.button button_title, class: 'base-button' %>
+  </div>
+<% end %>
+<% if user.persisted? %>
+  <%= button_to nil, admin_user_send_reset_password_path(user), id: 'resend_password_button', method: :put, class: 'hidden', data: { turbo_confirm: t('are_you_sure_'), turbo_frame: :_top } %>
+<% end %>

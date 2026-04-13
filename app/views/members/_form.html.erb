@@ -1,0 +1,22 @@
+<%= form_with model: member, url: member_path(member), method: :patch, local: true, html: { class: 'space-y-4' }, data: { turbo: false } do |f| %>
+  <div class="space-y-4">
+    <div>
+      <div class="text-sm text-base-content/70"><%= t('name') %></div>
+      <div class="font-medium"><%= member.full_name %></div>
+    </div>
+    <div>
+      <div class="text-sm text-base-content/70"><%= t('email') %></div>
+      <div class="font-medium"><%= member.email %></div>
+    </div>
+    <div class="form-control">
+      <%= label_tag :member_membership_role, t('account_role'), class: 'label' %>
+      <%= select_tag 'member[membership_role]',
+                     options_for_select(AccountAccess::ROLES.map { |role| [t(role), role] }, member.account_access_for(current_account)&.role || AccountAccess::CONTRIBUTOR_ROLE),
+                     class: 'base-select',
+                     id: 'member_membership_role' %>
+    </div>
+  </div>
+  <div class="form-control pt-2">
+    <%= f.button button_title(title: t('update'), disabled_with: t('updating')), class: 'base-button' %>
+  </div>
+<% end %>

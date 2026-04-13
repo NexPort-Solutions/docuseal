@@ -2,7 +2,7 @@
 
 RSpec.describe 'Email Settings' do
   let!(:account) { create(:account) }
-  let!(:user) { create(:user, account:) }
+  let!(:user) { create(:user, account:, role: User::PLATFORM_ADMIN_ROLE) }
 
   before do
     sign_in(user)
@@ -10,7 +10,7 @@ RSpec.describe 'Email Settings' do
 
   context 'when SMTP settings are not set' do
     it 'setup SMTP settings' do
-      visit settings_email_index_path
+      visit admin_email_index_path
 
       fill_in 'Host', with: 'smtp.example.com'
       fill_in 'Port', with: '587'
@@ -23,9 +23,9 @@ RSpec.describe 'Email Settings' do
 
       expect do
         click_button 'Save'
-      end.to change(EncryptedConfig, :count).by(1)
+      end.to change(GlobalEncryptedConfig, :count).by(1)
 
-      encrypted_config = EncryptedConfig.find_by(account:, key: EncryptedConfig::EMAIL_SMTP_KEY)
+      encrypted_config = GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::EMAIL_SMTP_KEY)
 
       expect(encrypted_config.value['host']).to eq('smtp.example.com')
       expect(encrypted_config.value['port']).to eq('587')
@@ -40,7 +40,7 @@ RSpec.describe 'Email Settings' do
 
   context 'when SMTP settings are set' do
     let!(:encrypted_config) do
-      create(:encrypted_config, account:, key: EncryptedConfig::EMAIL_SMTP_KEY, value: {
+      create(:global_encrypted_config, key: GlobalEncryptedConfig::EMAIL_SMTP_KEY, value: {
                host: 'smtp.example.com',
                port: '587',
                username: 'user@example.co',
@@ -53,7 +53,7 @@ RSpec.describe 'Email Settings' do
     end
 
     before do
-      visit settings_email_index_path
+      visit admin_email_index_path
     end
 
     it 'shows pre-filled SMTP settings' do
@@ -78,7 +78,7 @@ RSpec.describe 'Email Settings' do
 
       expect do
         click_button 'Save'
-      end.not_to change(EncryptedConfig, :count)
+      end.not_to change(GlobalEncryptedConfig, :count)
 
       encrypted_config.reload
 

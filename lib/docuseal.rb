@@ -111,7 +111,7 @@ module Docuseal
     return DEFAULT_URL_OPTIONS if multitenant?
 
     @default_url_options ||= begin
-      value = EncryptedConfig.find_by(key: EncryptedConfig::APP_URL_KEY)&.value if ENV['APP_URL'].blank?
+      value = GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::APP_URL_KEY)&.value if ENV['APP_URL'].blank?
       value ||= DEFAULT_APP_URL
       url = Addressable::URI.parse(value)
       { host: url.host, port: url.port, protocol: url.scheme }

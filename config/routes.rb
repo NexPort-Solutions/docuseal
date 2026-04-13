@@ -62,9 +62,10 @@ Rails.application.routes.draw do
   resources :setup, only: %i[index create]
   resource :newsletter, only: %i[show update]
   resources :enquiries, only: %i[create]
-  resources :users, only: %i[new create edit update destroy] do
+  resources :users, only: [] do
     resource :send_reset_password, only: %i[update], controller: 'users_send_reset_password'
   end
+  resources :members, only: %i[edit update destroy]
   post '/accounts/:account_id/select', to: 'account_selections#create', as: :select_account
   resource :user_signature, only: %i[edit update destroy]
   resource :user_initials, only: %i[edit update destroy]
@@ -167,26 +168,37 @@ Rails.application.routes.draw do
 
   get '/settings', to: 'settings_home#show', as: :settings_home
 
+  namespace :admin do
+    root 'home#show'
+
+    resources :accounts, except: :show do
+      post :archive, on: :member
+      post :restore, on: :member
+      post :impersonate, on: :member
+    end
+
+    resources :users, only: %i[index new create edit update destroy] do
+      resource :send_reset_password, only: %i[update], controller: 'users_send_reset_password'
+    end
+
+    resource :global_settings, only: :show
+    resource :application_settings, only: %i[show update]
+    resources :email, only: %i[index create], controller: 'email_settings'
+    resources :storage, only: %i[index create], controller: 'storage_settings'
+    resource :mcp_settings, only: %i[show update], path: 'mcp'
+  end
+
   scope '/settings', as: :settings do
     unless Docuseal.multitenant?
-      resources :storage, only: %i[index create], controller: 'storage_settings'
       resources :search_entries_reindex, only: %i[create]
       resources :sms, only: %i[index], controller: 'sms_settings'
-      resources :mcp, only: %i[index new create destroy], controller: 'mcp_settings'
     end
-    if Docuseal.demo? || !Docuseal.multitenant?
-      resources :api, only: %i[index create], controller: 'api_settings'
-      resource :reveal_access_token, only: %i[show create], controller: 'reveal_access_token'
-    end
-    resources :email, only: %i[index create], controller: 'email_smtp_settings'
+    resources :api, only: %i[index create], controller: 'api_settings'
+    resource :reveal_access_token, only: %i[show create], controller: 'reveal_access_token'
     resource :sso, only: %i[show update], controller: 'sso_settings'
     resources :notifications, only: %i[index create], controller: 'notifications_settings'
     resource :esign, only: %i[show create new update destroy], controller: 'esign_settings'
-    resources :users, only: %i[index]
-    resources :archived_users, only: %i[index], path: 'users/:status', controller: 'users',
-                               defaults: { status: :archived }
-    resources :integration_users, only: %i[index], path: 'users/:status', controller: 'users',
-                                  defaults: { status: :integration }
+    resources :users, only: %i[index], controller: 'members'
     resource :personalization, only: %i[show create], controller: 'personalization_settings'
     resources :webhooks, only: %i[index show new create update destroy], controller: 'webhook_settings' do
       post :resend
@@ -206,7 +218,6 @@ Rails.application.routes.draw do
       collection do
         patch :update_contact
         patch :update_password
-        patch :update_app_url
       end
     end
   end

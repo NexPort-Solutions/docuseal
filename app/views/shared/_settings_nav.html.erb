@@ -14,11 +14,6 @@
           <%= link_to t('account'), settings_account_path, class: 'text-base hover:bg-base-300' %>
         </li>
       <% end %>
-      <% if current_user.platform_admin? %>
-        <li>
-          <%= link_to t('divisions'), settings_divisions_path, class: 'text-base hover:bg-base-300' %>
-        </li>
-      <% end %>
       <% if admin_managed_accounts.many? %>
         <li class="menu-title pt-4 !bg-transparent">
           <span class="!bg-transparent"><%= t('switch_account') %></span>
@@ -31,18 +26,6 @@
                           class: "text-base hover:bg-base-300 text-left w-full px-4 py-2 #{'font-semibold' if account == current_account}" do %>
               <%= account.branded_name %>
             <% end %>
-          </li>
-        <% end %>
-      <% end %>
-      <% unless Docuseal.multitenant? %>
-        <% if can?(:read, EncryptedConfig.new(key: EncryptedConfig::EMAIL_SMTP_KEY, account: current_account)) && ENV['SMTP_ADDRESS'].blank? && true_user == current_user %>
-          <li>
-            <%= link_to t('email'), settings_email_index_path, class: 'text-base hover:bg-base-300' %>
-          </li>
-        <% end %>
-        <% if can?(:read, EncryptedConfig.new(key: EncryptedConfig::FILES_STORAGE_KEY, account: current_account)) && true_user == current_user && ENV['S3_ATTACHMENTS_BUCKET'].blank? && ENV['GCS_BUCKET'].blank? && ENV['AZURE_CONTAINER'].blank? %>
-          <li>
-            <%= link_to t('storage'), settings_storage_index_path, class: 'text-base hover:bg-base-300' %>
           </li>
         <% end %>
       <% end %>
@@ -61,19 +44,12 @@
           <%= link_to t('personalization'), settings_personalization_path, class: 'text-base hover:bg-base-300' %>
         </li>
       <% end %>
-      <% if can?(:manage, current_account) %>
+      <% if can?(:manage_members, current_account) %>
         <li>
-          <%= link_to t('users'), settings_users_path, class: 'text-base hover:bg-base-300' %>
+          <%= link_to t('members'), settings_users_path, class: 'text-base hover:bg-base-300' %>
         </li>
       <% end %>
       <%= render 'shared/settings_nav_extra' %>
-      <% if Docuseal.demo? || !Docuseal.multitenant? %>
-        <% if can?(:read, AccessToken) %>
-          <li>
-            <%= link_to 'API', settings_api_index_path, class: 'text-base hover:bg-base-300' %>
-          </li>
-        <% end %>
-      <% end %>
       <% if Docuseal.demo? || !Docuseal.multitenant? || (current_user != true_user && !current_account.testing?) %>
         <% if can?(:read, WebhookUrl) %>
           <li>
@@ -82,19 +58,9 @@
         <% end %>
       <% end %>
       <% if !Docuseal.demo? && can?(:manage, EncryptedConfig) && (current_user == true_user || current_account.testing?) %>
-        <li>
-          <%= link_to settings_api_index_path, class: 'text-base hover:bg-base-300', data: { turbo: false } do %>
-            API
-          <% end %>
-        </li>
         <% if can?(:manage, AccountConfig) && true_user == current_user %>
           <li>
             <%= link_to 'SSO', settings_sso_path, class: 'text-base hover:bg-base-300' %>
-          </li>
-        <% end %>
-        <% if !Docuseal.multitenant? && can?(:read, McpToken) && can?(:manage, :mcp) %>
-          <li>
-            <%= link_to 'MCP', settings_mcp_index_path, class: 'text-base hover:bg-base-300' %>
           </li>
         <% end %>
         <%= render 'shared/settings_nav_extra2' %>

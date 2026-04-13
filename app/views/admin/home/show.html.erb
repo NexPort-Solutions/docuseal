@@ -1,0 +1,34 @@
+<div class="max-w-6xl mx-auto px-4 md:px-2 flex flex-wrap space-y-4 md:flex-nowrap md:space-y-0 md:space-x-10">
+  <%= render 'shared/admin_nav' %>
+  <div class="flex-grow">
+    <div class="mb-6">
+      <h1 class="text-4xl font-bold"><%= t('admin_console') %></h1>
+      <p class="text-base-content/70 mt-2">
+        <%= t('manage_accounts_users_memberships_and_global_settings') %>
+      </p>
+    </div>
+
+    <div class="grid gap-4 md:grid-cols-3">
+      <%= link_to admin_accounts_path, class: 'card bg-base-100 border border-base-300 shadow-sm hover:border-base-content/30' do %>
+        <div class="card-body">
+          <h2 class="card-title"><%= t('accounts') %></h2>
+          <p><%= t('create_edit_archive_restore_and_support_accounts') %></p>
+        </div>
+      <% end %>
+
+      <%= link_to admin_users_path, class: 'card bg-base-100 border border-base-300 shadow-sm hover:border-base-content/30' do %>
+        <div class="card-body">
+          <h2 class="card-title"><%= t('users') %></h2>
+          <p><%= t('create_users_and_manage_cross_account_memberships') %></p>
+        </div>
+      <% end %>
+
+      <%= link_to admin_global_settings_path, class: 'card bg-base-100 border border-base-300 shadow-sm hover:border-base-content/30' do %>
+        <div class="card-body">
+          <h2 class="card-title"><%= t('global_settings') %></h2>
+          <p><%= t('manage_deployment_level_email_storage_application_and_mcp_settings') %></p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

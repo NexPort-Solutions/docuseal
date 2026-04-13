@@ -31,13 +31,11 @@ RSpec.describe 'App Setup' do
       expect do
         click_button 'Submit'
         page.driver.wait_for_network_idle
-      end.to change(Account, :count).by(1).and change(User, :count).by(1).and change(EncryptedConfig, :count).by(2)
+      end.to change(Account, :count).by(1).and change(User, :count).by(1).and change(GlobalEncryptedConfig, :count).by(2)
 
       user = User.last
-      encrypted_config_app_url = EncryptedConfig.find_by(account: user.account,
-                                                         key: EncryptedConfig::APP_URL_KEY)
-      encrypted_config_esign_certs = EncryptedConfig.find_by(account: user.account,
-                                                             key: EncryptedConfig::ESIGN_CERTS_KEY)
+      encrypted_config_app_url = GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::APP_URL_KEY)
+      encrypted_config_esign_certs = GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::ESIGN_CERTS_KEY)
 
       expect(user.first_name).to eq(form_data[:first_name])
       expect(user.last_name).to eq(form_data[:last_name])

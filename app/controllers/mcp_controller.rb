@@ -35,9 +35,7 @@ class McpController < ActionController::API
   def verify_mcp_enabled!
     return if Docuseal.multitenant?
 
-    return if AccountConfig.exists?(account_id: current_user.account_id,
-                                    key: AccountConfig::ENABLE_MCP_KEY,
-                                    value: true)
+    return if GlobalConfig.exists?(key: GlobalConfig::ENABLE_MCP_KEY, value: true)
 
     render json: { error: 'MCP is disabled' }, status: :forbidden
   end

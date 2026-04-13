@@ -4,39 +4,40 @@ RSpec.describe 'User memberships' do
   let(:account) { create(:account, name: 'Northwind') }
   let(:other_account) { create(:account, name: 'Contoso') }
   let(:account_admin) { create(:user, account:) }
+  let(:platform_admin) { create(:user, account:, role: User::PLATFORM_ADMIN_ROLE) }
 
-  describe 'POST /users' do
-    it 'adds an existing user to the current account with the selected membership role' do
+  describe 'PATCH /members/:id' do
+    it 'updates only the current account membership role' do
       # Arrange
-      existing_user = create(:user, account: other_account, email: 'member@example.com',
-                                    first_name: 'Existing', last_name: 'Member')
+      member = create(:user, account:, first_name: 'Jamie', last_name: 'Rivers')
+      member.account_accesses.find_by!(account: account).update!(role: AccountAccess::CONTRIBUTOR_ROLE)
       sign_in(account_admin)
 
       params = {
-        user: {
-          first_name: 'Jamie',
-          last_name: 'Rivers',
-          email: 'member@example.com',
-          membership_role: AccountAccess::VIEWER_ROLE
+        member: {
+          membership_role: AccountAccess::VIEWER_ROLE,
+          first_name: 'Should',
+          email: 'ignored@example.com'
         }
       }
 
       # Initial Assert
-      expect(existing_user.can_access_account?(account)).to be(false)
+      expect(member.account_access_for(account)&.role).to eq(AccountAccess::CONTRIBUTOR_ROLE)
+      expect(member.first_name).to eq('Jamie')
+      expect(member.email).not_to eq('ignored@example.com')
 
       # Act
-      post users_path, params: params
+      patch member_path(member), params: params
 
       # Assert
       expect(response).to redirect_to(settings_users_path)
-      expect(existing_user.reload.account_access_for(account)&.role).to eq(AccountAccess::VIEWER_ROLE)
-      expect(existing_user.first_name).to eq('Existing')
-      expect(existing_user.last_name).to eq('Member')
-      expect(existing_user.archived_at).to be_nil
+      expect(member.reload.account_access_for(account)&.role).to eq(AccountAccess::VIEWER_ROLE)
+      expect(member.first_name).to eq('Jamie')
+      expect(member.email).not_to eq('ignored@example.com')
     end
   end
 
-  describe 'DELETE /users/:id' do
+  describe 'DELETE /members/:id' do
     it 'removes only the current account membership when the user still belongs elsewhere' do
       # Arrange
       member = create(:user, account:)
@@ -49,7 +50,7 @@ RSpec.describe 'User memberships' do
       expect(member.accessible_accounts).to include(account, other_account)
 
       # Act
-      delete user_path(member)
+      delete member_path(member)
 
       # Assert
       expect(response).to redirect_to(settings_users_path)
@@ -67,11 +68,72 @@ RSpec.describe 'User memberships' do
       expect(member.account_accesses.count).to eq(1)
 
       # Act
-      delete user_path(member)
+      delete member_path(member)
 
       # Assert
       expect(response).to redirect_to(settings_users_path)
       expect(member.reload.archived_at).to be_present
+    end
+  end
+
+  describe 'POST /admin/users' do
+    it 'creates one global user with memberships in multiple accounts' do
+      # Arrange
+      sign_in(platform_admin)
+
+      params = {
+        user: {
+          first_name: 'Morgan',
+          last_name: 'Lee',
+          email: 'morgan.lee@example.com',
+          password: 'password123',
+          role: User::ADMIN_ROLE,
+          memberships: {
+            account.id.to_s => { selected: '1', role: AccountAccess::ACCOUNT_ADMIN_ROLE },
+            other_account.id.to_s => { selected: '1', role: AccountAccess::VIEWER_ROLE }
+          }
+        }
+      }
+
+      # Initial Assert
+      expect(User.find_by(email: 'morgan.lee@example.com')).to be_nil
+
+      # Act
+      post admin_users_path, params: params
+
+      # Assert
+      expect(response).to redirect_to(admin_users_path)
+      user = User.find_by!(email: 'morgan.lee@example.com')
+      expect(user.account_access_for(account)&.role).to eq(AccountAccess::ACCOUNT_ADMIN_ROLE)
+      expect(user.account_access_for(other_account)&.role).to eq(AccountAccess::VIEWER_ROLE)
+      expect(user.accessible_accounts).to match_array([account, other_account])
+    end
+
+    it 'rejects account admins from creating users in account settings' do
+      # Arrange
+      sign_in(account_admin)
+
+      params = {
+        user: {
+          first_name: 'Blocked',
+          last_name: 'User',
+          email: 'blocked@example.com',
+          password: 'password123',
+          memberships: {
+            account.id.to_s => { selected: '1', role: AccountAccess::CONTRIBUTOR_ROLE }
+          }
+        }
+      }
+
+      # Initial Assert
+      expect(User.find_by(email: 'blocked@example.com')).to be_nil
+
+      # Act
+      post admin_users_path, params: params
+
+      # Assert
+      expect(response).to redirect_to(root_path)
+      expect(User.find_by(email: 'blocked@example.com')).to be_nil
     end
   end
 end

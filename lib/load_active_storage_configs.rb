@@ -21,7 +21,7 @@ module LoadActiveStorageConfigs
     return if Rails.env.test?
     return if Rails.env.development?
 
-    encrypted_config = EncryptedConfig.find_by(key: EncryptedConfig::FILES_STORAGE_KEY)
+    encrypted_config = GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::FILES_STORAGE_KEY)
 
     return unless encrypted_config
 

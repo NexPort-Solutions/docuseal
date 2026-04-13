@@ -1,0 +1,38 @@
+<div class="max-w-6xl mx-auto px-4 md:px-2 flex flex-wrap space-y-4 md:flex-nowrap md:space-y-0 md:space-x-10">
+  <%= render 'shared/admin_nav' %>
+  <div class="flex-grow">
+    <div class="mb-6">
+      <h1 class="text-4xl font-bold"><%= t('global_settings') %></h1>
+      <p class="text-base-content/70 mt-2">
+        <%= t('manage_deployment_level_settings_once_for_the_whole_instance') %>
+      </p>
+    </div>
+
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <%= link_to admin_application_settings_path, class: 'card bg-base-100 border border-base-300 shadow-sm hover:border-base-content/30' do %>
+        <div class="card-body">
+          <h2 class="card-title"><%= t('application') %></h2>
+          <p><%= t('app_url_and_instance_identity') %></p>
+        </div>
+      <% end %>
+      <%= link_to admin_email_index_path, class: 'card bg-base-100 border border-base-300 shadow-sm hover:border-base-content/30' do %>
+        <div class="card-body">
+          <h2 class="card-title"><%= t('email') %></h2>
+          <p><%= t('smtp_delivery_settings') %></p>
+        </div>
+      <% end %>
+      <%= link_to admin_storage_index_path, class: 'card bg-base-100 border border-base-300 shadow-sm hover:border-base-content/30' do %>
+        <div class="card-body">
+          <h2 class="card-title"><%= t('storage') %></h2>
+          <p><%= t('file_storage_provider_and_credentials') %></p>
+        </div>
+      <% end %>
+      <%= link_to admin_mcp_settings_path, class: 'card bg-base-100 border border-base-300 shadow-sm hover:border-base-content/30' do %>
+        <div class="card-body">
+          <h2 class="card-title">MCP</h2>
+          <p><%= t('instance_level_mcp_availability') %></p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

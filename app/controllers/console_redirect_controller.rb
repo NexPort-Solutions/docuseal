@@ -8,7 +8,9 @@ class ConsoleRedirectController < ApplicationController
     return redirect_to(new_user_session_path) if true_user.blank?
 
     redirect_target =
-      if request.path == '/manage' && can?(:read, AccessToken)
+      if current_user.platform_admin?
+        admin_root_path
+      elsif request.path == '/manage' && can?(:read, AccessToken)
         settings_api_index_path
       elsif can?(:manage, EncryptedConfig)
         settings_account_path

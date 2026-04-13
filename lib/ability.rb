@@ -8,6 +8,7 @@ class Ability
 
     if user.platform_admin?
       can :manage, :all
+      can :read, :admin_console
       can :manage, :tenants
       can :manage, :reply_to
       can :manage, :personalization_advanced
@@ -48,10 +49,7 @@ class Ability
 
     return unless user.account_admin_for?(current_account)
 
-    can :create, User
-    can :manage, User do |target_user|
-      target_user == user || target_user.can_access_account?(current_account)
-    end
+    can :manage_members, Account, id: current_account.id
     can :manage, Account, id: current_account.id
     can :manage, EncryptedConfig, account_id: current_account.id
     can :manage, AccountConfig, account_id: current_account.id

@@ -157,6 +157,6 @@ describe 'Submitter API' do
 
   def update_submitter_body(submitter)
     submitter_body(submitter).except(:template, :submission_events)
-                             .merge(embed_src: "#{Docuseal::DEFAULT_APP_URL}/s/#{submitter.slug}")
+                             .merge(embed_src: submit_form_url(slug: submitter.slug, **Docuseal.default_url_options))
   end
 end

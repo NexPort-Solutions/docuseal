@@ -81,4 +81,46 @@ RSpec.describe UserMailer do
       expect(mail.body.encoded).to include(I18n.t('hello_name', locale: :de, name: 'Greta'))
     end
   end
+
+  describe 'production SMTP interceptor' do
+    it 'keeps the branded sender display name when global SMTP settings are applied' do
+      # Arrange
+      original_delivery_method = Rails.application.config.action_mailer.delivery_method
+      account = create(:account)
+      create(:account_config,
+             account:,
+             key: AccountConfig::BRANDING_SETTINGS_KEY,
+             value: {
+               'display_name' => 'Northwind Health',
+               'sender_name' => 'Northwind Notifications',
+               'support_email' => 'support@northwind.example'
+             })
+      create(:global_encrypted_config,
+             key: GlobalEncryptedConfig::EMAIL_SMTP_KEY,
+             value: {
+               'from_email' => 'smtp@delivery.example',
+               'host' => 'smtp.example.com',
+               'port' => 587,
+               'username' => 'mailer',
+               'password' => 'secret'
+             })
+      user = create(:user, account:, email: 'invitee@example.com')
+      allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new('production'))
+      allow(Docuseal).to receive(:multitenant?).and_return(false)
+      Rails.application.config.action_mailer.delivery_method = nil
+
+      # Initial Assert
+      expect(account.sender_name).to eq('Northwind Notifications')
+
+      # Act
+      mail = described_class.invitation_email(user)
+      ActionMailerConfigsInterceptor.delivering_email(mail)
+
+      # Assert
+      expect(mail.from).to eq(['smtp@delivery.example'])
+      expect(mail[:from].display_names).to eq(['Northwind Notifications'])
+    ensure
+      Rails.application.config.action_mailer.delivery_method = original_delivery_method
+    end
+  end
 end

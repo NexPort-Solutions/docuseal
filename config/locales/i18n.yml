@@ -41,7 +41,28 @@ en: &en
   contributor: Contributor
   account_admin: Account admin
   account_role: Account role
+  account_name: Account name
+  account_memberships: Account memberships
   accounts: Accounts
+  members: Members
+  edit_member: Edit member
+  add_account: Add account
+  edit_account: Edit account
+  first_account_admin: First account admin
+  admin_console: Admin Console
+  overview: Overview
+  global_settings: Global Settings
+  application: Application
+  manage_accounts_users_memberships_and_global_settings: Manage accounts, users, memberships, and global settings.
+  create_edit_archive_restore_and_support_accounts: Create, edit, archive, restore, and support accounts.
+  create_users_and_manage_cross_account_memberships: Create users and manage memberships across accounts.
+  manage_deployment_level_email_storage_application_and_mcp_settings: Manage deployment-level email, storage, application, and MCP settings.
+  manage_deployment_level_settings_once_for_the_whole_instance: Manage deployment-level settings once for the whole instance.
+  app_url_and_instance_identity: Configure the application URL and deployment identity.
+  smtp_delivery_settings: Configure SMTP delivery settings for the deployment.
+  file_storage_provider_and_credentials: Configure the file storage provider and credentials for the deployment.
+  instance_level_mcp_availability: Control MCP availability for the whole deployment.
+  user_must_belong_to_at_least_one_account: User must belong to at least one account.
   open_workspace: Open workspace
   open_settings: Open settings
   switch_account: Switch account

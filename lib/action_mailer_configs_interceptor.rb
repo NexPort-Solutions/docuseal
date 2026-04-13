@@ -28,12 +28,17 @@ module ActionMailerConfigsInterceptor
     end
 
     unless Docuseal.multitenant?
-      email_configs = EncryptedConfig.order(:account_id).find_by(key: EncryptedConfig::EMAIL_SMTP_KEY)
+      email_configs = GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::EMAIL_SMTP_KEY)
 
       if email_configs
         message.delivery_method(:smtp, build_smtp_configs_hash(email_configs))
+        from = email_configs.value['from_email'].to_s
 
-        message.from = %("#{email_configs.account.name.to_s.delete('"')}" <#{email_configs.value['from_email']}>)
+        if from.match?(User::FULL_EMAIL_REGEXP)
+          message[:from] = message[:from].to_s.sub(User::EMAIL_REGEXP, from)
+        else
+          message.from = from
+        end
       else
         message.delivery_method(:test)
       end
