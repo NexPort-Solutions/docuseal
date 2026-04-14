@@ -108,7 +108,9 @@ module Accounts
   def load_signing_pkcs(account)
     cert_data =
       if Docuseal.multitenant?
-        data = EncryptedConfig.find_by(account:, key: EncryptedConfig::ESIGN_CERTS_KEY)&.value
+        data = encrypted_config_value(EncryptedConfig.find_by(account:, key: EncryptedConfig::ESIGN_CERTS_KEY),
+                                      source: "account #{account.id}",
+                                      key: EncryptedConfig::ESIGN_CERTS_KEY)
 
         return Docuseal.default_pkcs if data.blank?
 
@@ -116,9 +118,15 @@ module Accounts
       else
         return Docuseal.default_pkcs if Docuseal::CERTS.present?
 
-        EncryptedConfig.find_by(account:, key: EncryptedConfig::ESIGN_CERTS_KEY)&.value ||
-          GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::ESIGN_CERTS_KEY)&.value ||
-          EncryptedConfig.find_by(key: EncryptedConfig::ESIGN_CERTS_KEY)&.value ||
+        encrypted_config_value(EncryptedConfig.find_by(account:, key: EncryptedConfig::ESIGN_CERTS_KEY),
+                               source: "account #{account.id}",
+                               key: EncryptedConfig::ESIGN_CERTS_KEY) ||
+          encrypted_config_value(GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::ESIGN_CERTS_KEY),
+                                 source: 'global current',
+                                 key: GlobalEncryptedConfig::ESIGN_CERTS_KEY) ||
+          encrypted_config_value(EncryptedConfig.find_by(key: EncryptedConfig::ESIGN_CERTS_KEY),
+                                 source: 'global legacy',
+                                 key: EncryptedConfig::ESIGN_CERTS_KEY) ||
           generated_cert_data
       end
 
@@ -137,10 +145,15 @@ module Accounts
     if Docuseal.multitenant?
       Docuseal::TIMESERVER_URL
     else
-      url = EncryptedConfig.find_by(account:, key: EncryptedConfig::TIMESTAMP_SERVER_URL_KEY)&.value
+      url =
+        encrypted_config_value(EncryptedConfig.find_by(account:, key: EncryptedConfig::TIMESTAMP_SERVER_URL_KEY),
+                               source: "account #{account.id}",
+                               key: EncryptedConfig::TIMESTAMP_SERVER_URL_KEY)
 
       unless Docuseal.multitenant?
-        url ||= GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::TIMESTAMP_SERVER_URL_KEY)&.value
+        url ||= encrypted_config_value(GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::TIMESTAMP_SERVER_URL_KEY),
+                                       source: 'global current',
+                                       key: GlobalEncryptedConfig::TIMESTAMP_SERVER_URL_KEY)
       end
 
       url
@@ -150,15 +163,23 @@ module Accounts
   def load_trusted_certs(account)
     cert_data =
       if Docuseal.multitenant?
-        value = EncryptedConfig.find_by(account:, key: EncryptedConfig::ESIGN_CERTS_KEY)&.value || {}
+        value = encrypted_config_value(EncryptedConfig.find_by(account:, key: EncryptedConfig::ESIGN_CERTS_KEY),
+                                       source: "account #{account.id}",
+                                       key: EncryptedConfig::ESIGN_CERTS_KEY) || {}
 
         Docuseal::CERTS.merge(value)
       elsif Docuseal::CERTS.present?
         Docuseal::CERTS
       else
-        EncryptedConfig.find_by(account:, key: EncryptedConfig::ESIGN_CERTS_KEY)&.value ||
-          GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::ESIGN_CERTS_KEY)&.value ||
-          EncryptedConfig.find_by(key: EncryptedConfig::ESIGN_CERTS_KEY)&.value ||
+        encrypted_config_value(EncryptedConfig.find_by(account:, key: EncryptedConfig::ESIGN_CERTS_KEY),
+                               source: "account #{account.id}",
+                               key: EncryptedConfig::ESIGN_CERTS_KEY) ||
+          encrypted_config_value(GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::ESIGN_CERTS_KEY),
+                                 source: 'global current',
+                                 key: GlobalEncryptedConfig::ESIGN_CERTS_KEY) ||
+          encrypted_config_value(EncryptedConfig.find_by(key: EncryptedConfig::ESIGN_CERTS_KEY),
+                                 source: 'global legacy',
+                                 key: EncryptedConfig::ESIGN_CERTS_KEY) ||
           generated_cert_data
       end
 
@@ -207,5 +228,16 @@ module Accounts
 
   def generated_cert_data
     @generated_cert_data ||= GenerateCertificate.call.transform_values(&:to_pem)
+  end
+
+  def encrypted_config_value(record, source:, key:)
+    return if record.blank?
+
+    record.value
+  rescue ActiveRecord::Encryption::Errors::Decryption, OpenSSL::Cipher::CipherError, OpenSSL::Cipher::AuthTagError => e
+    Rails.logger.warn("Unreadable encrypted config #{source}: #{key}") if defined?(Rails)
+    Rollbar.warning(e) if defined?(Rollbar)
+
+    nil
   end
 end
