@@ -179,6 +179,58 @@ describe 'Templates API' do
     end
   end
 
+  describe 'PUT /templates/:id' do
+    let(:template) do
+      create(:template, account:,
+                        author:,
+                        folder:,
+                        external_id: SecureRandom.base58(10),
+                        preferences: template_preferences)
+    end
+
+    it 'persists field conditions through the browser template update path' do
+      # Arrange
+      sign_in(author)
+      first_field = template.fields.find { |field| field['name'] == 'First Name' }
+      condition_field = template.fields.find { |field| field['name'] == 'Birthday' }
+      updated_fields = template.fields.deep_dup
+      updated_fields.find { |field| field['uuid'] == first_field['uuid'] }['conditions'] = [
+        {
+          'field_uuid' => condition_field['uuid'],
+          'action' => 'not_empty'
+        }
+      ]
+
+      params = {
+        template: {
+          name: template.name,
+          schema: template.schema,
+          submitters: template.submitters,
+          fields: updated_fields,
+          variables_schema: template.variables_schema
+        }
+      }
+
+      # Initial Assert
+      expect(first_field['conditions']).to be_blank
+
+      # Act
+      put template_path(template), params: params
+
+      # Assert
+      expect(response).to have_http_status(:ok)
+      persisted_field = template.reload.fields.find { |field| field['uuid'] == first_field['uuid'] }
+      expect(persisted_field['conditions']).to eq(
+        [
+          {
+            'field_uuid' => condition_field['uuid'],
+            'action' => 'not_empty'
+          }
+        ]
+      )
+    end
+  end
+
   private
 
   def template_body(template)

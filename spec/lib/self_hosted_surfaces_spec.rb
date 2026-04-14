@@ -47,6 +47,26 @@ RSpec.describe 'Self-hosted OSS surfaces' do
     end
   end
 
+  it 'does not leave Pro-only blockers in the template conditions modal' do
+    # Arrange
+    modal_path = Rails.root.join('app/javascript/template_builder/conditions_modal.vue')
+    forbidden_fragments = [
+      "t('available_in_pro')",
+      "t('available_only_in_pro')"
+    ]
+
+    # Initial Assert
+    expect(modal_path).to exist
+
+    # Act
+    modal_content = modal_path.read
+
+    # Assert
+    forbidden_fragments.each do |fragment|
+      expect(modal_content).not_to include(fragment), "conditions modal still includes #{fragment}"
+    end
+  end
+
   it 'keeps active locale help and legal copy self-hosted-safe' do
     # Arrange
     locale_path = Rails.root.join('config/locales/i18n.yml')

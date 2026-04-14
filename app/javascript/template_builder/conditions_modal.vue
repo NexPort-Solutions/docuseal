@@ -18,12 +18,6 @@
         >&times;</a>
       </div>
       <div>
-        <div
-          v-if="!withConditions"
-          class="bg-base-300 rounded-xl py-2 px-3 text-center"
-        >
-          <span class="text-sm text-base-content/70">{{ t('available_in_pro') }}</span>
-        </div>
         <form @submit.prevent="validateSaveAndClose">
           <div class="my-4">
             <div
@@ -160,7 +154,7 @@
 <script>
 export default {
   name: 'ConditionModal',
-  inject: ['t', 'template', 'withConditions'],
+  inject: ['t', 'template'],
   props: {
     item: {
       type: Object,
@@ -237,10 +231,6 @@ export default {
       return actions
     },
     validateSaveAndClose () {
-      if (!this.withConditions) {
-        return alert(this.t('available_only_in_pro'))
-      }
-
       if (this.conditions.find((f) => f.field_uuid)) {
         this.item.conditions = this.conditions
       } else {
