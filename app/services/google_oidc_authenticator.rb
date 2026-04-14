@@ -25,18 +25,18 @@ class GoogleOidcAuthenticator
 
     account = resolve_account(email)
     return Result.new(error: I18n.t('unable_to_match_google_account_to_a_division')) unless account
+    role = account.google_oidc_role_for(email)
+    return Result.new(error: I18n.t('google_account_is_not_allowed_for_this_division')) unless role
 
     user = User.find_by(email:)
+    new_user = user.nil?
 
-    unless user
-      return Result.new(error: I18n.t('google_account_is_not_allowed_for_this_division')) unless account.google_oidc_auto_provision?
-
+    if new_user
       user = account.users.new(
         email:,
         first_name: @auth.dig('info', 'first_name').presence || @auth.dig('info', 'name').to_s.split.first,
         last_name: @auth.dig('info', 'last_name').presence || @auth.dig('info', 'name').to_s.split.drop(1).join(' '),
-        password: SecureRandom.hex,
-        role: User::ADMIN_ROLE
+        password: SecureRandom.hex
       )
     end
 
@@ -47,7 +47,7 @@ class GoogleOidcAuthenticator
     user.archived_at = nil
     user.save!
     membership = user.account_accesses.find_or_initialize_by(account:)
-    membership.role = AccountAccess::ACCOUNT_ADMIN_ROLE if membership.new_record? || membership.role.blank?
+    membership.role = role if new_user || membership.new_record? || membership.role.blank?
     membership.save!
     user.sync_membership_state!
 
@@ -59,26 +59,19 @@ class GoogleOidcAuthenticator
   def resolve_account(email)
     if @hinted_account_id.present?
       account = Account.find_by(id: @hinted_account_id)
-      return account if account&.google_oidc_enabled? && account_matches?(account, email)
+      return account if account&.google_oidc_enabled? && account.google_oidc_match?(email)
 
       return nil
     end
 
-    matching_accounts = Account.active.select(&:google_oidc_enabled?).select { |account| account_matches?(account, email) }
+    matching_accounts = Account.active.select(&:google_oidc_enabled?).select { |account| account.google_oidc_match?(email) }
 
     matching_accounts.one? ? matching_accounts.first : nil
-  end
-
-  def account_matches?(account, email)
-    return true if account.google_oidc_allowed_admin_emails.include?(email)
-
-    domain = email.split('@', 2).last
-    account.google_oidc_hosted_domains.include?(domain)
   end
 
   def account_user_allowed?(account, email, user)
     return true if user.platform_admin?
 
-    user.can_access_account?(account) || account_matches?(account, email)
+    user.can_access_account?(account) || account.google_oidc_match?(email)
   end
 end

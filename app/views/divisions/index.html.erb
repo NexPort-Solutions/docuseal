@@ -19,11 +19,14 @@
           </div>
           <div class="flex flex-wrap gap-2 justify-end">
             <%= link_to t('edit'), edit_settings_division_path(division), class: 'btn btn-sm' %>
-            <%= button_to t('support'), impersonate_settings_division_path(division), method: :post, class: 'btn btn-sm btn-outline' %>
+            <%= button_to t('support'), impersonate_settings_division_path(division), method: :post,
+                          class: 'btn btn-sm btn-outline', data: { turbo: false } %>
             <% if division.archived_at? %>
-              <%= button_to t('restore'), restore_settings_division_path(division), method: :post, class: 'btn btn-sm btn-outline' %>
+              <%= button_to t('restore'), restore_settings_division_path(division), method: :post,
+                            class: 'btn btn-sm btn-outline', data: { turbo: false } %>
             <% else %>
-              <%= button_to t('archive'), archive_settings_division_path(division), method: :post, class: 'btn btn-sm btn-outline btn-warning' %>
+              <%= button_to t('archive'), archive_settings_division_path(division), method: :post,
+                            class: 'btn btn-sm btn-outline btn-warning', data: { turbo: false } %>
             <% end %>
           </div>
         </div>

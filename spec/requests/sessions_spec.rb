@@ -73,4 +73,23 @@ RSpec.describe 'Sessions' do
       expect(response).to redirect_to(templates_path)
     end
   end
+
+  describe 'GET /settings/sso' do
+    it 'shows the updated account-only role descriptions and no auto-provision toggle' do
+      # Arrange
+      account = create(:account)
+      user = create(:user, account:)
+      sign_in(user)
+
+      # Act
+      get settings_sso_path
+
+      # Assert
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('Account access only')
+      expect(response.body).to include('Allowed viewer emails')
+      expect(response.body).to include('Allowed contributor emails')
+      expect(response.body).not_to include('Auto-provision matched admins')
+     end
+  end
 end

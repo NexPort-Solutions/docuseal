@@ -99,22 +99,49 @@ class Account < ApplicationRecord
     account_configs.find_or_initialize_by(key: AccountConfig::FORCE_SSO_AUTH_KEY).value == true
   end
 
+  def google_oidc_role_for(email)
+    normalized_email = email.to_s.downcase
+
+    return AccountAccess::ACCOUNT_ADMIN_ROLE if google_oidc_allowed_admin_emails.include?(normalized_email)
+    return AccountAccess::CONTRIBUTOR_ROLE if google_oidc_allowed_contributor_emails.include?(normalized_email)
+    return AccountAccess::VIEWER_ROLE if google_oidc_allowed_viewer_emails.include?(normalized_email)
+
+    domain = normalized_email.split('@', 2).last
+    return AccountAccess::VIEWER_ROLE if domain.present? && google_oidc_hosted_domains.include?(domain)
+
+    nil
+  end
+
+  def google_oidc_match?(email)
+    google_oidc_role_for(email).present?
+  end
+
   def google_oidc_hosted_domains
     Array(google_oidc_settings['hosted_domains']).flat_map { |value| value.to_s.split(/[\s,;]+/) }
-                                                 .map(&:downcase)
-                                                 .reject(&:blank?)
-                                                 .uniq
+                                                  .map(&:downcase)
+                                                  .reject(&:blank?)
+                                                  .uniq
+  end
+
+  def google_oidc_allowed_viewer_emails
+    Array(google_oidc_settings['allowed_viewer_emails']).flat_map { |value| value.to_s.split(/[\s,;]+/) }
+                                                        .map(&:downcase)
+                                                        .reject(&:blank?)
+                                                        .uniq
+  end
+
+  def google_oidc_allowed_contributor_emails
+    Array(google_oidc_settings['allowed_contributor_emails']).flat_map { |value| value.to_s.split(/[\s,;]+/) }
+                                                             .map(&:downcase)
+                                                             .reject(&:blank?)
+                                                             .uniq
   end
 
   def google_oidc_allowed_admin_emails
     Array(google_oidc_settings['allowed_admin_emails']).flat_map { |value| value.to_s.split(/[\s,;]+/) }
-                                                       .map(&:downcase)
-                                                       .reject(&:blank?)
-                                                       .uniq
-  end
-
-  def google_oidc_auto_provision?
-    google_oidc_settings['auto_provision'] == true
+                                                        .map(&:downcase)
+                                                        .reject(&:blank?)
+                                                        .uniq
   end
 
   def testing?

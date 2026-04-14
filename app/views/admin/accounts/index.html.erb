@@ -19,11 +19,14 @@
           </div>
           <div class="flex flex-wrap gap-2 justify-end">
             <%= link_to t('edit'), edit_admin_account_path(account), class: 'btn btn-sm' %>
-            <%= button_to t('support'), impersonate_admin_account_path(account), method: :post, class: 'btn btn-sm btn-outline' %>
+            <%= button_to t('support'), impersonate_admin_account_path(account), method: :post,
+                          class: 'btn btn-sm btn-outline', data: { turbo: false } %>
             <% if account.archived_at? %>
-              <%= button_to t('restore'), restore_admin_account_path(account), method: :post, class: 'btn btn-sm btn-outline' %>
+              <%= button_to t('restore'), restore_admin_account_path(account), method: :post,
+                            class: 'btn btn-sm btn-outline', data: { turbo: false } %>
             <% else %>
-              <%= button_to t('archive'), archive_admin_account_path(account), method: :post, class: 'btn btn-sm btn-outline btn-warning' %>
+              <%= button_to t('archive'), archive_admin_account_path(account), method: :post,
+                            class: 'btn btn-sm btn-outline btn-warning', data: { turbo: false } %>
             <% end %>
           </div>
         </div>

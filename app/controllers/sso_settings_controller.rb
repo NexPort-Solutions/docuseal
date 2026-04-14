@@ -8,8 +8,7 @@ class SsoSettingsController < ApplicationController
 
   def update
     @account_config.value = sso_params.to_h.merge(
-      'enabled' => sso_params[:enabled] == 'true',
-      'auto_provision' => sso_params[:auto_provision] == 'true'
+      'enabled' => sso_params[:enabled] == 'true'
     )
     @account_config.save!
 
@@ -24,7 +23,9 @@ class SsoSettingsController < ApplicationController
   end
 
   def sso_params
-    params.fetch(:google_oidc, ActionController::Parameters.new).permit(:enabled, :auto_provision,
-                                                                        :hosted_domains, :allowed_admin_emails)
+    params.fetch(:google_oidc, ActionController::Parameters.new).permit(:enabled, :hosted_domains,
+                                                                        :allowed_admin_emails,
+                                                                        :allowed_contributor_emails,
+                                                                        :allowed_viewer_emails)
   end
 end

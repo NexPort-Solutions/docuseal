@@ -2,6 +2,13 @@
   <%= render 'shared/settings_nav' %>
   <div class="flex-grow max-w-xl mx-auto">
     <h1 class="text-4xl font-bold mb-4">Google Workspace SSO</h1>
+    <div class="alert mb-4">
+      <%= svg_icon('info_circle', class: 'w-6 h-6') %>
+      <div>
+        <p class="font-bold">Account access only</p>
+        <p class="text-gray-700">These settings control which users can access this account through Google Workspace and what account role they receive. They do not grant platform admin access.</p>
+      </div>
+    </div>
     <%= form_with url: settings_sso_path, method: :patch, local: true, class: 'space-y-4' do |f| %>
       <% config = @account_config.value.to_h %>
       <div class="form-control">
@@ -10,15 +17,23 @@
       </div>
       <div class="form-control">
         <label class="label">Hosted domains</label>
+        <p class="text-sm text-gray-600 mb-2">Verified Google Workspace emails from these domains can sign in to this account as viewers.</p>
         <%= text_area_tag 'google_oidc[hosted_domains]', Array(config['hosted_domains']).join("\n"), class: 'base-input min-h-28', placeholder: "example.com\nsubsidiary.com" %>
       </div>
       <div class="form-control">
-        <label class="label">Allowed admin emails</label>
-        <%= text_area_tag 'google_oidc[allowed_admin_emails]', Array(config['allowed_admin_emails']).join("\n"), class: 'base-input min-h-28', placeholder: "admin@example.com\nowner@example.com" %>
+        <label class="label">Allowed viewer emails</label>
+        <p class="text-sm text-gray-600 mb-2">These specific email addresses can sign in as viewers even if their domain is not listed above.</p>
+        <%= text_area_tag 'google_oidc[allowed_viewer_emails]', Array(config['allowed_viewer_emails']).join("\n"), class: 'base-input min-h-28', placeholder: "viewer@example.com\nauditor@example.net" %>
       </div>
       <div class="form-control">
-        <%= f.label :auto_provision, 'Auto-provision matched admins', class: 'label' %>
-        <%= f.select :auto_provision, options_for_select([[t('enabled'), true], [t('disabled'), false]], config['auto_provision']), {}, name: 'google_oidc[auto_provision]', class: 'base-select' %>
+        <label class="label">Allowed contributor emails</label>
+        <p class="text-sm text-gray-600 mb-2">These specific email addresses can sign in as contributors even if their domain is not listed above.</p>
+        <%= text_area_tag 'google_oidc[allowed_contributor_emails]', Array(config['allowed_contributor_emails']).join("\n"), class: 'base-input min-h-28', placeholder: "editor@example.com\ncoordinator@example.net" %>
+      </div>
+      <div class="form-control">
+        <label class="label">Allowed admin emails</label>
+        <p class="text-sm text-gray-600 mb-2">These specific email addresses can sign in as account admins even if their domain is not listed above.</p>
+        <%= text_area_tag 'google_oidc[allowed_admin_emails]', Array(config['allowed_admin_emails']).join("\n"), class: 'base-input min-h-28', placeholder: "admin@example.com\nowner@example.com" %>
       </div>
       <div class="alert">
         <%= svg_icon('info_circle', class: 'w-6 h-6') %>

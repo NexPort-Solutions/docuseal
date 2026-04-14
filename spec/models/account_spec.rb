@@ -72,7 +72,7 @@ RSpec.describe Account do
   end
 
   describe 'google oidc settings' do
-    it 'normalizes hosted domains and allowed admin emails' do
+    it 'normalizes hosted domains and explicit role allowlists' do
       # Arrange
       account = create(:account)
       create(:account_config,
@@ -81,8 +81,9 @@ RSpec.describe Account do
              value: {
                'enabled' => true,
                'hosted_domains' => 'Example.com; example.org  EXAMPLE.NET',
+               'allowed_viewer_emails' => 'Viewer@Example.com, auditor@example.org',
+               'allowed_contributor_emails' => 'Editor@Example.com;writer@example.org',
                'allowed_admin_emails' => 'Admin@Example.com, owner@example.org;ADMIN@example.com',
-               'auto_provision' => true
              })
 
       # Initial Assert
@@ -90,8 +91,13 @@ RSpec.describe Account do
 
       # Act / Assert
       expect(account.google_oidc_hosted_domains).to contain_exactly('example.com', 'example.org', 'example.net')
+      expect(account.google_oidc_allowed_viewer_emails).to contain_exactly('viewer@example.com', 'auditor@example.org')
+      expect(account.google_oidc_allowed_contributor_emails).to contain_exactly('editor@example.com', 'writer@example.org')
       expect(account.google_oidc_allowed_admin_emails).to contain_exactly('admin@example.com', 'owner@example.org')
-      expect(account.google_oidc_auto_provision?).to be(true)
+      expect(account.google_oidc_role_for('admin@example.com')).to eq(AccountAccess::ACCOUNT_ADMIN_ROLE)
+      expect(account.google_oidc_role_for('editor@example.com')).to eq(AccountAccess::CONTRIBUTOR_ROLE)
+      expect(account.google_oidc_role_for('viewer@example.com')).to eq(AccountAccess::VIEWER_ROLE)
+      expect(account.google_oidc_role_for('member@example.net')).to eq(AccountAccess::VIEWER_ROLE)
     end
   end
 end
