@@ -90,10 +90,12 @@ module GenerateCertificate
   end
 
   def load_pkcs(cert_data)
-    cert = OpenSSL::X509::Certificate.new(cert_data['cert'])
-    key = OpenSSL::PKey::RSA.new(cert_data['key']) if cert_data['key'].present?
-    sub_ca = OpenSSL::X509::Certificate.new(cert_data['sub_ca'])
-    root_ca = OpenSSL::X509::Certificate.new(cert_data['root_ca'])
+    cert_data = cert_data.with_indifferent_access
+
+    cert = OpenSSL::X509::Certificate.new(cert_data[:cert])
+    key = OpenSSL::PKey::RSA.new(cert_data[:key]) if cert_data[:key].present?
+    sub_ca = OpenSSL::X509::Certificate.new(cert_data[:sub_ca])
+    root_ca = OpenSSL::X509::Certificate.new(cert_data[:root_ca])
 
     return Pkcs12Struct.new(certificate: cert, ca_certs: [sub_ca, root_ca]) unless key
 
