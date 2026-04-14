@@ -2,16 +2,20 @@
 
 module Admin
   class UsersController < BaseController
-    before_action :load_user, only: %i[edit update destroy]
+    before_action :load_user, only: %i[edit update destroy memberships]
     before_action :build_user, only: %i[new create]
 
     def index
-      @users = User.includes(:account_accesses).order(id: :desc)
+      @users = User.includes(account_accesses: :account).order(id: :desc)
     end
 
     def new; end
 
     def edit; end
+
+    def memberships
+      @memberships = @user.active_account_accesses
+    end
 
     def create
       @user.password = SecureRandom.hex if @user.password.blank?
@@ -67,7 +71,7 @@ module Admin
     end
 
     def load_user
-      @user = User.find(params[:id])
+      @user = User.includes(account_accesses: :account).find(params[:id])
     end
 
     def user_params

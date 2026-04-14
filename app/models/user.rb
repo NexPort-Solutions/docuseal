@@ -129,6 +129,16 @@ class User < ApplicationRecord
     accessible_accounts
   end
 
+  def active_account_accesses
+    account_accesses
+      .select { |membership| membership.account.present? && !membership.account.archived_at? }
+      .sort_by { |membership| membership.account.branded_name.downcase }
+  end
+
+  def active_membership_count
+    active_account_accesses.count
+  end
+
   def accessible_account_ids
     if platform_admin?
       Account.active.select(:id)

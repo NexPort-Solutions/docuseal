@@ -177,9 +177,10 @@ Rails.application.routes.draw do
       post :impersonate, on: :member
     end
 
-    resources :users, only: %i[index new create edit update destroy] do
-      resource :send_reset_password, only: %i[update], controller: 'users_send_reset_password'
-    end
+      resources :users, only: %i[index new create edit update destroy] do
+        get :memberships, on: :member
+        resource :send_reset_password, only: %i[update], controller: 'users_send_reset_password'
+      end
 
     resource :global_settings, only: :show
     resource :application_settings, only: %i[show update]

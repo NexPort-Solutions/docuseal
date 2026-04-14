@@ -1,0 +1,22 @@
+<%= render 'shared/turbo_modal', title: t('account_memberships') do %>
+  <div class="space-y-4">
+    <% if @memberships.any? %>
+      <div class="space-y-2">
+        <% @memberships.each do |membership| %>
+          <div class="flex items-center justify-between rounded-xl border border-base-300 px-4 py-3">
+            <div class="font-medium"><%= membership.account.branded_name %></div>
+            <span class="badge badge-outline whitespace-nowrap"><%= t(membership.role) %></span>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="text-sm opacity-70"><%= t('none') %></div>
+    <% end %>
+
+    <div class="flex justify-end">
+      <%= link_to edit_admin_user_path(@user), class: 'btn btn-primary btn-sm', data: { turbo_frame: 'modal' } do %>
+        <%= t('edit_user') %>
+      <% end %>
+    </div>
+  </div>
+<% end %>

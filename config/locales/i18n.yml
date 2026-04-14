@@ -44,6 +44,7 @@ en: &en
   account_name: Account name
   account_memberships: Account memberships
   accounts: Accounts
+  memberships: Memberships
   members: Members
   edit_member: Edit member
   add_account: Add account

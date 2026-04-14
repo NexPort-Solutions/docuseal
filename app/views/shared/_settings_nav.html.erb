@@ -14,21 +14,6 @@
           <%= link_to t('account'), settings_account_path, class: 'text-base hover:bg-base-300' %>
         </li>
       <% end %>
-      <% if admin_managed_accounts.many? %>
-        <li class="menu-title pt-4 !bg-transparent">
-          <span class="!bg-transparent"><%= t('switch_account') %></span>
-        </li>
-        <% admin_managed_accounts.each do |account| %>
-          <li>
-            <%= button_to select_account_path(account),
-                          method: :post,
-                          params: { redirect_to: settings_account_path },
-                          class: "text-base hover:bg-base-300 text-left w-full px-4 py-2 #{'font-semibold' if account == current_account}" do %>
-              <%= account.branded_name %>
-            <% end %>
-          </li>
-        <% end %>
-      <% end %>
       <% if can?(:read, AccountConfig) %>
         <li>
           <%= link_to t('notifications'), settings_notifications_path, class: 'text-base hover:bg-base-300' %>
