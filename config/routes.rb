@@ -52,6 +52,11 @@ Rails.application.routes.draw do
   end
 
   resources :verify_pdf_signature, only: %i[create]
+  resource :profile, only: %i[show], controller: 'profile' do
+    patch :update_contact
+    patch :update_password
+    delete :unlink_google
+  end
   resource :mfa_setup, only: %i[show new edit create destroy], controller: 'mfa_setup'
   resources :account_configs, only: %i[create destroy]
   resources :account_custom_fields, only: %i[create]
@@ -214,12 +219,6 @@ Rails.application.routes.draw do
       post :archive, on: :member
       post :restore, on: :member
       post :impersonate, on: :member
-    end
-    resources :profile, only: %i[index] do
-      collection do
-        patch :update_contact
-        patch :update_password
-      end
     end
   end
 

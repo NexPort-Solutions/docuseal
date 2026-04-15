@@ -139,6 +139,16 @@ class User < ApplicationRecord
     active_account_accesses.count
   end
 
+  def google_profile_linked?
+    provider == 'google_oauth2' && uid.present?
+  end
+
+  def force_sso_membership_accounts
+    active_account_accesses.filter_map do |membership|
+      membership.account if membership.account&.force_sso_auth?
+    end
+  end
+
   def accessible_account_ids
     if platform_admin?
       Account.active.select(:id)

@@ -7,8 +7,9 @@ RSpec.describe 'Profile Settings' do
     sign_in(user)
 
     allow(Accounts).to receive(:can_send_emails?).and_return(true)
+    allow(User).to receive(:google_oauth_available?).and_return(true)
 
-    visit settings_profile_index_path
+    visit profile_path
   end
 
   it 'shows the profile settings page' do
@@ -16,6 +17,8 @@ RSpec.describe 'Profile Settings' do
     expect(page).to have_field('user[email]', with: user.email)
     expect(page).to have_field('user[first_name]', with: user.first_name)
     expect(page).to have_field('user[last_name]', with: user.last_name)
+    expect(page).to have_content('SSO Profiles')
+    expect(page).to have_button('Link Google')
 
     expect(page).to have_content('Change Password')
     expect(page).to have_field('user[password]')
@@ -53,7 +56,7 @@ RSpec.describe 'Profile Settings' do
 
       find('#profile_password_update_button').click
 
-      expect(page).to have_current_path(settings_profile_index_path, ignore_query: true)
+      expect(page).to have_current_path(profile_path, ignore_query: true)
       expect(page).to have_content('Password has been changed')
     end
 
@@ -81,7 +84,7 @@ RSpec.describe 'Profile Settings' do
       fill_in 'New password', with: 'newpassword'
       find('label', text: 'Click here').click
 
-      expect(page).to have_current_path(settings_profile_index_path, ignore_query: true)
+      expect(page).to have_current_path(profile_path, ignore_query: true)
       expect(page).to have_content('An email with password reset instructions has been sent.')
 
       email = ActionMailer::Base.deliveries.last

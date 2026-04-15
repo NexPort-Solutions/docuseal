@@ -6,9 +6,6 @@
         <span class="!bg-transparent"><%= t('settings') %></span>
       </li>
       <li></li>
-      <li>
-        <%= link_to t('profile'), settings_profile_index_path, class: 'text-base hover:bg-base-300' %>
-      </li>
       <% if current_user.platform_admin? || current_user.account_admin_for?(current_account) %>
         <li>
           <%= link_to t('account'), settings_account_path, class: 'text-base hover:bg-base-300' %>

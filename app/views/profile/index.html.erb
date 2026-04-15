@@ -1,10 +1,9 @@
-<div class="flex flex-wrap space-y-4 md:flex-nowrap md:space-y-0">
-  <%= render 'shared/settings_nav' %>
-  <div class="flex-grow max-w-xl mx-auto">
+<div class="max-w-3xl mx-auto px-4 md:px-2 pb-8">
+  <div class="max-w-xl mx-auto">
     <h1 class="text-4xl font-bold mb-4">
       <%= t('profile') %>
     </h1>
-    <%= form_for current_user, url: update_contact_settings_profile_index_path, method: :patch,
+    <%= form_for current_user, url: update_contact_profile_path, method: :patch,
                  data: { turbo: false },
                  html: { autocomplete: 'off', class: 'space-y-4' } do |f| %>
       <div class="grid md:grid-cols-2 gap-4">
@@ -33,6 +32,44 @@
       </div>
     <% end %>
     <%= render 'email_configs' %>
+    <p class="text-2xl font-bold mt-8 mb-4">
+      SSO Profiles
+    </p>
+    <div class="rounded-2xl border border-base-300 p-4 space-y-4">
+      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div class="space-y-1">
+          <p class="font-semibold text-lg">Google Workspace</p>
+          <% if current_user.google_profile_linked? %>
+            <p class="text-sm text-base-content/80">
+              Linked as <span class="font-medium"><%= current_user.email %></span>
+            </p>
+          <% else %>
+            <p class="text-sm text-base-content/80">
+              Not linked
+            </p>
+          <% end %>
+          <p class="text-sm text-base-content/70">
+            This linked profile is used for account sign-in only. It does not grant global admin.
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <% if current_user.google_profile_linked? %>
+            <%= button_to 'Unlink Google', unlink_google_profile_path, method: :delete,
+                          data: { turbo: false, turbo_confirm: 'Are you sure?' },
+                          class: 'white-button' %>
+          <% elsif User.google_oauth_available? %>
+              <%= button_to 'Link Google',
+                            user_google_oauth2_omniauth_authorize_path,
+                            method: :post,
+                            params: { intent: 'link_profile', login_hint: current_user.email },
+                            data: { turbo: false },
+                            class: 'base-button' %>
+          <% else %>
+            <span class="text-sm text-base-content/70">Google Workspace sign-in is not configured for this deployment.</span>
+          <% end %>
+        </div>
+      </div>
+    </div>
     <p class="text-2xl font-bold mt-8 mb-4">
       <%= t('signature') %>
     </p>
@@ -63,7 +100,7 @@
       <p class="text-2xl font-bold mt-8 mb-4">
         <%= t('change_password') %>
       </p>
-      <%= form_for current_user, url: update_password_settings_profile_index_path, method: :patch,
+      <%= form_for current_user, url: update_password_profile_path, method: :patch,
                    data: { turbo: false },
                    html: { autocomplete: 'off' } do |f| %>
         <%= f.label :password, t('new_password'), class: 'label' %>
@@ -116,5 +153,4 @@
       </div>
     <% end %>
   </div>
-  <div class="w-0 md:w-52"></div>
 </div>

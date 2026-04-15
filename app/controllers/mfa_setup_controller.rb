@@ -18,7 +18,7 @@ class MfaSetupController < ApplicationController
       current_user.otp_required_for_login = true
       current_user.save!
 
-      redirect_to settings_profile_index_path, notice: I18n.t('2fa_has_been_configured')
+      redirect_to profile_path, notice: I18n.t('2fa_has_been_configured')
     else
       @provision_url = current_user.otp_provisioning_uri(current_user.email, issuer: Docuseal.product_name)
 
@@ -32,7 +32,7 @@ class MfaSetupController < ApplicationController
     if current_user.validate_and_consume_otp!(params[:otp_attempt])
       current_user.update!(otp_required_for_login: false, otp_secret: nil)
 
-      redirect_to settings_profile_index_path, notice: I18n.t('2fa_has_been_removed')
+      redirect_to profile_path, notice: I18n.t('2fa_has_been_removed')
     else
       @error_message = I18n.t('code_is_invalid')
 

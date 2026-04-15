@@ -21,7 +21,7 @@
   <% if devise_mapping.omniauthable? %>
     <div class="space-y-4">
       <% if User.omniauth_providers.include?(:google_oauth2) && User.google_oauth_available? %>
-        <%= form_for '', url: omniauth_authorize_path(resource_name, :google_oauth2), data: { turbo: false }, method: :post do |f| %>
+        <%= form_for '', url: user_google_oauth2_omniauth_authorize_path, data: { turbo: false }, method: :post do |f| %>
           <set-timezone data-input-id="state" data-params="true"></set-timezone>
           <%= hidden_field_tag :state, { redir: params[:redir].to_s }.compact_blank.to_query %>
           <%= hidden_field_tag :account_id, params[:account_id] if params[:account_id].present? %>
