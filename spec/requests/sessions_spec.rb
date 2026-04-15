@@ -40,27 +40,30 @@ RSpec.describe 'Sessions' do
     end
 
     around do |example|
-      original_auth = Rails.application.env_config['omniauth.auth']
+      original_test_mode = OmniAuth.config.test_mode
+      original_mock_auth = OmniAuth.config.mock_auth[:google_oauth2]
       original_params = Rails.application.env_config['omniauth.params']
-      Rails.application.env_config['omniauth.auth'] = auth_hash
+
+      OmniAuth.config.test_mode = true
+      OmniAuth.config.mock_auth[:google_oauth2] = OmniAuth::AuthHash.new(auth_hash)
       Rails.application.env_config['omniauth.params'] = { 'account_id' => force_sso_account.id.to_s }
       example.run
     ensure
-      Rails.application.env_config['omniauth.auth'] = original_auth
+      OmniAuth.config.test_mode = original_test_mode
+      OmniAuth.config.mock_auth[:google_oauth2] = original_mock_auth
       Rails.application.env_config['omniauth.params'] = original_params
     end
 
     it 'allows switching into the hinted force-sso account after a successful Google callback' do
       # Arrange
       create(:account_config, account: force_sso_account, key: AccountConfig::FORCE_SSO_AUTH_KEY, value: true)
+      create(:account_config,
+             account: force_sso_account,
+             key: AccountConfig::GOOGLE_OIDC_SETTINGS_KEY,
+             value: { 'enabled' => true, 'allowed_viewer_emails' => user.email })
       user.account_accesses.find_or_create_by!(account: force_sso_account) do |membership|
         membership.role = AccountAccess::VIEWER_ROLE
       end
-
-      result = GoogleOidcAuthenticator::Result.new(user:)
-      allow(GoogleOidcAuthenticator).to receive(:call)
-        .with(auth: auth_hash, hinted_account_id: force_sso_account.id.to_s)
-        .and_return(result)
 
       # Initial Assert
       expect(force_sso_account.force_sso_auth?).to be(true)
@@ -91,5 +94,23 @@ RSpec.describe 'Sessions' do
       expect(response.body).to include('Allowed contributor emails')
       expect(response.body).not_to include('Auto-provision matched admins')
      end
+  end
+
+  describe 'GET /sign_in' do
+    it 'renders the Google sign-in request form' do
+      # Arrange
+      create(:user, account: create(:account))
+      allow(User).to receive(:google_oauth_available?).and_return(true)
+      Warden.test_reset!
+
+      # Act
+      get new_user_session_path
+      follow_redirect! if response.redirect?
+
+      # Assert
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('action="/auth/google_oauth2"')
+      expect(response.body).to include('method="post"')
+    end
   end
 end

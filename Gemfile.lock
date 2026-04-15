@@ -376,6 +376,9 @@ GEM
     omniauth-oauth2 (1.9.0)
       oauth2 (>= 2.0.2, < 3)
       omniauth (~> 2.0)
+    omniauth-rails_csrf_protection (2.0.1)
+      actionpack (>= 4.2)
+      omniauth (~> 2.0)
     onnxruntime (0.10.1-aarch64-linux)
       ffi
     onnxruntime (0.10.1-arm64-darwin)
@@ -678,6 +681,7 @@ DEPENDENCIES
   numo-narray-alt
   oj
   omniauth-google-oauth2
+  omniauth-rails_csrf_protection
   onnxruntime
   pagy
   pg
