@@ -18,7 +18,9 @@ class EsignSettingsController < ApplicationController
   authorize_resource :encrypted_config, only: %i[update destroy show]
 
   def show
-    cert_data = @encrypted_config.value || {}
+    show_unreadable_config_alert
+
+    cert_data = @config_unreadable ? generated_cert_data : @config_value
 
     default_pkcs = GenerateCertificate.load_pkcs(cert_data) if cert_data['cert'].present?
 
@@ -47,7 +49,7 @@ class EsignSettingsController < ApplicationController
   def create
     @cert_record = CertFormRecord.new(**cert_params)
 
-    if (@encrypted_config.value && @encrypted_config.value['custom']&.any? { |e| e['name'] == @cert_record.name }) ||
+    if (@config_value.present? && @config_value['custom']&.any? { |e| e['name'] == @cert_record.name }) ||
        @cert_record.name == DEFAULT_CERT_NAME
 
       @cert_record.errors.add(:name, I18n.t('already_exists'))
@@ -56,7 +58,7 @@ class EsignSettingsController < ApplicationController
                     status: :unprocessable_content
     end
 
-    save_new_cert!(@encrypted_config, @cert_record)
+    save_new_cert!(@encrypted_config, @cert_record, existing_value: @config_value)
 
     redirect_to settings_esign_path, notice: I18n.t('certificate_has_been_successfully_added')
   rescue OpenSSL::PKCS12::PKCS12Error => e
@@ -68,25 +70,29 @@ class EsignSettingsController < ApplicationController
   end
 
   def update
-    @encrypted_config.value['custom'].to_a.each { |e| e['status'] = 'validate' }
+    config_value = @config_value.deep_dup
+    config_value['custom'] ||= []
+    config_value['custom'].each { |e| e['status'] = 'validate' }
 
-    custom_cert_data = @encrypted_config.value['custom'].to_a.find { |e| e['name'] == params[:name] }
+    custom_cert_data = config_value['custom'].to_a.find { |e| e['name'] == params[:name] }
 
     if custom_cert_data
       custom_cert_data['status'] = 'default'
     elsif params[:name] == Docuseal::AATL_CERT_NAME
-      @encrypted_config.value['custom'] ||= []
-      @encrypted_config.value['custom'] << { 'name' => params[:name], 'status' => 'default' }
+      config_value['custom'] << { 'name' => params[:name], 'status' => 'default' }
     end
 
+    @encrypted_config.value = config_value
     @encrypted_config.save!
 
     redirect_to settings_esign_path, notice: I18n.t('default_certificate_has_been_selected')
   end
 
   def destroy
-    @encrypted_config.value['custom'].reject! { |e| e['name'] == params[:name] }
+    config_value = @config_value.deep_dup
+    config_value['custom'] = config_value.fetch('custom', []).reject { |e| e['name'] == params[:name] }
 
+    @encrypted_config.value = config_value
     @encrypted_config.save!
 
     redirect_to settings_esign_path, notice: I18n.t('certificate_has_been_removed')
@@ -97,12 +103,17 @@ class EsignSettingsController < ApplicationController
   def load_encrypted_config
     @encrypted_config = EncryptedConfig.find_or_initialize_by(account: current_account,
                                                               key: EncryptedConfig::ESIGN_CERTS_KEY)
+    result = EncryptedConfigValueReader.fetch(@encrypted_config,
+                                              source: "account #{current_account.id}",
+                                              key: EncryptedConfig::ESIGN_CERTS_KEY)
+    @config_value = result.value || {}
+    @config_unreadable = result.unreadable
   end
 
-  def save_new_cert!(cert_configs, cert_record)
+  def save_new_cert!(cert_configs, cert_record, existing_value:)
     pkcs = OpenSSL::PKCS12.new(cert_record.file.read, cert_record.password)
 
-    cert_configs.value ||= {}
+    cert_configs.value = existing_value.deep_dup
     cert_configs.value['custom'] ||= []
     cert_configs.value['custom'].each { |e| e['status'] = 'validate' }
     cert_configs.value['custom'] << {
@@ -119,5 +130,16 @@ class EsignSettingsController < ApplicationController
     return {} if params[:esign_settings_controller_cert_form_record].blank?
 
     params.require(:esign_settings_controller_cert_form_record).permit(:name, :file, :password)
+  end
+
+  def show_unreadable_config_alert
+    return unless @config_unreadable
+
+    flash.now[:alert] = I18n.t('stored_settings_are_unreadable_reenter_and_save',
+                               default: 'Stored settings could not be read. Re-enter them and save again.')
+  end
+
+  def generated_cert_data
+    @generated_cert_data ||= GenerateCertificate.call.transform_values(&:to_pem).stringify_keys
   end
 end
