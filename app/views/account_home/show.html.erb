@@ -1,0 +1,22 @@
+<div class="max-w-5xl mx-auto px-4 md:px-2 py-4">
+  <div class="rounded-3xl border border-base-300 bg-base-100 shadow-sm overflow-hidden">
+    <div class="px-6 py-8 md:px-10 md:py-10 border-b border-base-300">
+      <h1 class="text-4xl font-bold"><%= current_account.branded_name %></h1>
+      <p class="text-base-content/70 mt-2">
+        Home
+      </p>
+    </div>
+
+    <div class="px-6 py-8 md:px-10 md:py-10">
+      <div class="prose max-w-none">
+        <%= MarkdownToHtml.call(current_account.home_page_content).html_safe %>
+      </div>
+
+      <div class="mt-8">
+        <%= link_to templates_path, class: 'btn btn-primary' do %>
+          Go to Templates
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

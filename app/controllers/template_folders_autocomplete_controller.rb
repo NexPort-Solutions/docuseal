@@ -6,6 +6,8 @@ class TemplateFoldersAutocompleteController < ApplicationController
   LIMIT = 30
 
   def index
+    content_scope = ContentPermissions::Scope.new(current_user, account: current_account)
+
     parent_name, name =
       if params[:parent_name].present?
         [params[:parent_name], params[:q]]
@@ -19,8 +21,9 @@ class TemplateFoldersAutocompleteController < ApplicationController
       name = parent_name
     end
 
+    readable_templates = current_account.templates.where(id: content_scope.readable_template_ids)
     template_folders = TemplateFolders.filter_active_folders(@template_folders.where(parent_folder:),
-                                                             Template.accessible_by(current_ability))
+                                                             readable_templates)
 
     name = name.to_s.downcase
 

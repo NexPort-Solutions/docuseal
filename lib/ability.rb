@@ -28,6 +28,7 @@ class Ability
 
     content_scope = ContentPermissions::Scope.new(user, account: current_account)
     readable_template_ids = normalize_ids(content_scope.readable_template_ids)
+    readable_submission_ids = normalize_ids(content_scope.readable_submission_ids)
 
     can :read, Account, id: current_account.id
     can :read, Template, id: readable_template_ids
@@ -36,13 +37,16 @@ class Ability
       Abilities::TemplateConditions.entity(template, user:, account: current_account, ability: 'read')
     end
 
-    can :read, TemplateFolder, id: content_scope.readable_folder_ids
-    can :read, Submission, id: content_scope.readable_submission_ids
-    can :read, Submitter, submission_id: content_scope.readable_submission_ids
+    readable_folder_ids = normalize_ids(content_scope.readable_folder_ids)
+
+    can :read, TemplateFolder, id: readable_folder_ids
+    can :read, Submission, id: readable_submission_ids
+    can :read, Submitter, submission_id: readable_submission_ids
 
     if user.contributor_for?(current_account)
       editable_template_ids = normalize_ids(content_scope.editable_template_ids)
       admin_template_ids = normalize_ids(content_scope.admin_template_ids)
+      admin_submission_ids = normalize_ids(content_scope.admin_submission_ids)
 
       can :update, Template, id: editable_template_ids
       can :update, Template do |template|
@@ -56,12 +60,15 @@ class Ability
       end
 
       can :manage, :template_create if content_scope.creatable_folder_ids.present?
-      can :manage, TemplateFolder, id: content_scope.manageable_folder_ids
+      can :create, Template if content_scope.creatable_folder_ids.present?
+      manageable_folder_ids = normalize_ids(content_scope.manageable_folder_ids)
+
+      can :manage, TemplateFolder, id: manageable_folder_ids
       can :manage_permissions, Template, id: admin_template_ids
-      can :manage_permissions, TemplateFolder, id: content_scope.manageable_folder_ids
+      can :manage_permissions, TemplateFolder, id: manageable_folder_ids
       can :manage, TemplateSharing, template_id: admin_template_ids
-      can %i[update destroy], Submission, id: content_scope.admin_submission_ids
-      can :manage, Submitter, submission_id: content_scope.admin_submission_ids
+      can %i[update destroy], Submission, id: admin_submission_ids
+      can :manage, Submitter, submission_id: admin_submission_ids
       can :manage, WebhookUrl, account_id: current_account.id
     end
 

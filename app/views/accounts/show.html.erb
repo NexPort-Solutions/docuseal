@@ -92,6 +92,22 @@
     <% if can?(:manage, AccountConfig) %>
       <div class="px-1 mt-8">
         <h2 class="text-2xl font-bold mb-2">
+          Home Page
+        </h2>
+        <p class="text-base-content/70 mb-4">
+          Edit the signed-in landing page for this account. This content is account-specific and shown when users click the product title or logo.
+        </p>
+        <%= form_with url: settings_account_path, method: :patch, local: true, class: 'space-y-4' do %>
+          <%= render 'personalization_settings/markdown_editor', name: 'home_page_content', value: current_account.home_page_content %>
+          <div class="form-control pt-2">
+            <button class="base-button" id="account_home_page_update_button" type="submit"><%= t('save') %></button>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+    <% if can?(:manage, AccountConfig) %>
+      <div class="px-1 mt-8">
+        <h2 class="text-2xl font-bold mb-2">
           <%= t('preferences') %>
         </h2>
         <% account_config = AccountConfig.find_or_initialize_by(account: current_account, key: AccountConfig::FORCE_MFA) %>

@@ -23,6 +23,7 @@ RSpec.describe 'Settings navigation' do
       expect(response.body).not_to include(I18n.t('switch_account'))
       expect(response.body).to include(select_account_path(secondary_account))
       expect(response.body).to include(secondary_account.branded_name)
+      expect(response.body).to include(%(href="#{account_home_path}"))
     end
   end
 end

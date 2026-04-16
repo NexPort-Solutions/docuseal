@@ -60,6 +60,27 @@ RSpec.describe 'Accounts' do
       expect(response).to have_http_status(:ok)
       expect(response.body).not_to include(%(href="#{settings_sms_path}"))
     end
+
+    it 'shows the account home page editor' do
+      sign_in(account_admin)
+
+      get settings_account_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('Home Page')
+      expect(response.body).to include('account_home_page_update_button')
+    end
+  end
+
+  describe 'PATCH /settings/account' do
+    it 'persists account home page content independently of account profile fields' do
+      sign_in(account_admin)
+
+      patch settings_account_path, params: { home_page_content: 'Custom account home copy' }
+
+      expect(response).to redirect_to(settings_account_path)
+      expect(account.account_configs.find_by(key: AccountConfig::HOME_PAGE_CONTENT_KEY)&.value).to eq('Custom account home copy')
+    end
   end
 
   describe 'GET /settings/sms' do

@@ -9,12 +9,15 @@ class TemplateFoldersController < ApplicationController
   FOLDERS_PER_PAGE = 18
 
   def show
-    @templates = Template.active.accessible_by(current_ability)
-                         .where(folder: [@template_folder, *(params[:q].present? ? @template_folder.subfolders : [])])
-                         .preload(:author, :content_accesses, folder: :content_accesses)
+    content_scope = ContentPermissions::Scope.new(current_user, account: current_account)
+    readable_templates = current_account.templates.where(id: content_scope.readable_template_ids).active
+
+    @templates = readable_templates
+                 .where(folder: [@template_folder, *(params[:q].present? ? @template_folder.subfolders : [])])
+                 .preload(:author, :content_accesses, folder: :content_accesses)
 
     @template_folders =
-      @template_folder.subfolders.where(id: Template.accessible_by(current_ability).active.select(:folder_id))
+      @template_folder.subfolders.where(id: readable_templates.select(:folder_id))
 
     @template_folders = TemplateFolders.search(@template_folders, params[:q])
     @template_folders = TemplateFolders.sort(@template_folders, current_account:, order: selected_order)

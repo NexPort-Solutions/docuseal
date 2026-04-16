@@ -1,13 +1,36 @@
-<%= render 'shared/turbo_modal_large', title: t('rename_folder') do %>
-  <%= form_for @template_folder, url: folder_path(@template_folder), data: { turbo_frame: :_top }, html: { autocomplete: :off } do |f| %>
-    <div class="form-control my-6">
-      <%= f.text_field :name, required: true, placeholder: "#{t('folder_name')}...", class: 'base-input w-full', autofocus: true, dir: 'auto' %>
-    </div>
-    <div class="form-control">
-      <%= f.button button_title(title: t('rename'), disabled_with: t('saving')), class: 'base-button' %>
-    </div>
+<%= render 'shared/turbo_modal_large', title: 'Edit Folder' do %>
+  <% options = [['General', 'general']] %>
+  <% options << [t('permissions'), 'permissions'] if can_manage_content_permissions?(@template_folder) %>
+
+  <% if options.size > 1 %>
+    <toggle-visible data-element-ids="<%= options.map(&:last).to_json %>" class="relative text-center mt-3 block">
+      <div class="join">
+        <% options.each_with_index do |(label, value), index| %>
+          <span>
+            <%= radio_button_tag 'option', value, value == 'general', class: 'peer hidden', data: { action: 'change:toggle-visible#trigger' } %>
+            <label for="option_<%= value %>" class="<%= '!rounded-s-full' if index.zero? %> btn btn-focus btn-sm join-item peer-checked:btn-active normal-case md:w-48">
+              <%= label %>
+            </label>
+          </span>
+        <% end %>
+      </div>
+    </toggle-visible>
   <% end %>
+
+  <div id="general" class="px-5 py-4">
+    <%= form_for @template_folder, url: folder_path(@template_folder), data: { turbo_frame: :_top }, html: { autocomplete: :off } do |f| %>
+      <div class="form-control my-6">
+        <%= f.text_field :name, required: true, placeholder: "#{t('folder_name')}...", class: 'base-input w-full', autofocus: true, dir: 'auto' %>
+      </div>
+      <div class="form-control">
+        <%= f.button button_title(title: t('save'), disabled_with: t('saving')), class: 'base-button' %>
+      </div>
+    <% end %>
+  </div>
+
   <% if can_manage_content_permissions?(@template_folder) %>
-    <%= render 'content_accesses/table', securable: @template_folder %>
+    <div id="permissions" class="hidden px-5 py-4">
+      <%= render 'content_accesses/table', securable: @template_folder %>
+    </div>
   <% end %>
 <% end %>

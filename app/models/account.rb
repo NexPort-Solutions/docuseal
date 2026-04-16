@@ -91,6 +91,21 @@ class Account < ApplicationRecord
     account_configs.find_or_initialize_by(key: AccountConfig::GOOGLE_OIDC_SETTINGS_KEY).value.to_h
   end
 
+  def home_page_content
+    account_configs.find_or_initialize_by(key: AccountConfig::HOME_PAGE_CONTENT_KEY).value.to_s.presence ||
+      default_home_page_content
+  end
+
+  def default_home_page_content
+    <<~TEXT.strip
+      **Welcome to #{branded_name}.**
+
+      Use this workspace to organize folders, manage templates, and send documents for signature from your current account.
+
+      Start from the Templates area to create or manage the forms your team uses.
+    TEXT
+  end
+
   def google_oidc_enabled?
     google_oidc_settings['enabled'] == true
   end

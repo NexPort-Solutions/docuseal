@@ -57,6 +57,7 @@ Rails.application.routes.draw do
     patch :update_password
     delete :unlink_google
   end
+  resource :account_home, only: %i[show], path: 'home', controller: 'account_home'
   resource :mfa_setup, only: %i[show new edit create destroy], controller: 'mfa_setup'
   resources :account_configs, only: %i[create destroy]
   resources :account_custom_fields, only: %i[create]

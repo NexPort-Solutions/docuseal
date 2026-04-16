@@ -100,4 +100,13 @@ RSpec.describe Account do
       expect(account.google_oidc_role_for('member@example.net')).to eq(AccountAccess::VIEWER_ROLE)
     end
   end
+
+  describe 'home page content' do
+    it 'falls back to a default message when no custom content exists' do
+      account = create(:account, name: 'Northwind')
+
+      expect(account.home_page_content).to include('Welcome to Northwind')
+      expect(account.home_page_content).to include('Templates area')
+    end
+  end
 end

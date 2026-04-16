@@ -18,8 +18,9 @@ class AccountsController < ApplicationController
   def show; end
 
   def update
-    current_account.update!(account_params)
+    current_account.update!(account_params) if account_params.present?
     update_branding!
+    update_home_page_content!
     attach_logo!
 
     with_locale do
@@ -52,20 +53,38 @@ class AccountsController < ApplicationController
   end
 
   def account_params
+    return {} unless params[:account].present?
+
     params.require(:account).permit(:name, :timezone, :locale)
   end
 
   def branding_params
-    return {} unless params[:branding].present?
+    return nil unless params[:branding].present?
 
     params.require(:branding).permit(:display_name, :support_email, :sender_name, :default_reply_to,
                                      :primary_color, :secondary_color).to_h.compact_blank
   end
 
   def update_branding!
+    return if branding_params.blank?
+
     config = current_account.account_configs.find_or_initialize_by(key: AccountConfig::BRANDING_SETTINGS_KEY)
     config.value = config.value.to_h.merge(branding_params)
     config.save!
+  end
+
+  def update_home_page_content!
+    return unless params.key?(:home_page_content)
+
+    config = current_account.account_configs.find_or_initialize_by(key: AccountConfig::HOME_PAGE_CONTENT_KEY)
+    content = params[:home_page_content].to_s.strip
+
+    if content.blank?
+      config.destroy! if config.persisted?
+    else
+      config.value = content
+      config.save!
+    end
   end
 
   def attach_logo!

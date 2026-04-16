@@ -60,6 +60,7 @@ class AccountConfig < ApplicationRecord
   ENABLE_MCP_KEY = 'enable_mcp'
   BRANDING_SETTINGS_KEY = 'branding_settings'
   GOOGLE_OIDC_SETTINGS_KEY = 'google_oidc_settings'
+  HOME_PAGE_CONTENT_KEY = 'home_page_content'
 
   EMAIL_VARIABLES = {
     SUBMITTER_INVITATION_EMAIL_KEY => %w[template.name submitter.link account.name].freeze,
