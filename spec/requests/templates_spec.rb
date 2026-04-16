@@ -177,6 +177,44 @@ describe 'Templates API' do
       expect(cloned_template.external_id).to eq('123456')
       expect(response.parsed_body).to eq(JSON.parse(clone_template_body(cloned_template).to_json))
     end
+
+    it 'skips source-account ACL rows that are invalid in a different destination account' do
+      # Arrange
+      destination_account = create(:account)
+      create(:user, account: destination_account)
+      platform_admin = create(:user, account:, role: User::PLATFORM_ADMIN_ROLE, email: 'platform-admin@example.com')
+      foreign_user = create(:user, account:, email: 'foreign-user@example.com')
+      template = create(:template, account:,
+                                   author:,
+                                   folder:,
+                                   external_id: SecureRandom.base58(10),
+                                   preferences: template_preferences)
+      create(
+        :content_access,
+        user: foreign_user,
+        securable: template,
+        template_permission: ContentAccess::ADMIN_PERMISSION,
+        submission_permission: ContentAccess::ADMIN_PERMISSION
+      )
+
+      # Initial Assert
+      expect(template.content_accesses.count).to eq(1)
+
+      # Act
+      sign_in(platform_admin)
+      expect do
+        post template_clone_index_path(template), params: {
+          template: { name: 'Cross Account Clone' },
+          account_id: destination_account.id
+        }
+      end.to change(Template, :count).by(1)
+
+      # Assert
+      expect(response).to redirect_to(root_path)
+      cloned_template = Template.order(:id).last
+      expect(cloned_template.account).to eq(destination_account)
+      expect(cloned_template.content_accesses).to be_empty
+    end
   end
 
   describe 'PUT /templates/:id' do

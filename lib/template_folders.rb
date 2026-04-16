@@ -3,6 +3,16 @@
 module TemplateFolders
   module_function
 
+  Resolution = Struct.new(
+    :folder,
+    :authorization_folder,
+    :requires_creation,
+    :parent_name,
+    :name,
+    :parent_folder,
+    keyword_init: true
+  )
+
   def filter_by_full_name(template_folders, name)
     return template_folders.none if name.blank?
 
@@ -79,17 +89,65 @@ module TemplateFolders
   end
 
   def find_or_create_by_name(author, name)
-    return author.account.default_template_folder if name.blank? || name == TemplateFolder::DEFAULT_NAME
+    materialize_resolution(author, resolve_by_name(author.account, name))
+  end
 
-    parent_name, name = name.to_s.split(' / ', 2).map(&:squish)
+  def resolve_by_name(account, name, fallback_folder: nil)
+    default_folder = fallback_folder || account.default_template_folder
 
-    if name.present?
-      parent_folder = author.account.template_folders.create_with(author:)
-                            .find_or_create_by(name: parent_name, parent_folder_id: nil)
+    return Resolution.new(folder: default_folder, authorization_folder: default_folder, requires_creation: false) if name.blank? || name == TemplateFolder::DEFAULT_NAME
+
+    parent_name, child_name = name.to_s.split(' / ', 2).map(&:squish)
+
+    if child_name.present?
+      parent_folder = account.template_folders.find_by(name: parent_name, parent_folder_id: nil)
+
+      if parent_folder.present?
+        folder = account.template_folders.find_by(name: child_name, parent_folder:)
+
+        Resolution.new(
+          folder:,
+          authorization_folder: folder || parent_folder,
+          requires_creation: folder.nil?,
+          name: child_name,
+          parent_name: parent_name,
+          parent_folder:
+        )
+      else
+        Resolution.new(
+          folder: nil,
+          authorization_folder: default_folder,
+          requires_creation: true,
+          name: child_name,
+          parent_name:
+        )
+      end
     else
-      name = parent_name
-    end
+      folder = account.template_folders.find_by(name: parent_name, parent_folder_id: nil)
 
-    author.account.template_folders.create_with(author:).find_or_create_by(name:, parent_folder:)
+      Resolution.new(
+        folder:,
+        authorization_folder: folder || default_folder,
+        requires_creation: folder.nil?,
+        name: parent_name
+      )
+    end
+  end
+
+  def materialize_resolution(author, resolution)
+    return resolution.folder if resolution.folder.present?
+    return author.account.default_template_folder unless resolution.requires_creation
+
+    if resolution.parent_name.present?
+      parent_folder = resolution.parent_folder ||
+                      author.account.template_folders.create_with(author:)
+                            .find_or_create_by(name: resolution.parent_name, parent_folder_id: nil)
+
+      author.account.template_folders.create_with(author:)
+            .find_or_create_by(name: resolution.name, parent_folder:)
+    else
+      author.account.template_folders.create_with(author:)
+            .find_or_create_by(name: resolution.name, parent_folder: nil)
+    end
   end
 end

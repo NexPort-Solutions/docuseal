@@ -43,10 +43,12 @@ class TemplatesUploadsController < ApplicationController
   def save_template!(template, url_params)
     template.account = current_account
     template.author = current_user
-    template.folder = TemplateFolders.find_or_create_by_name(current_user, params[:folder_name])
+    folder_resolution = TemplateFolders.resolve_by_name(current_account, params[:folder_name])
     template.name = File.basename((url_params || params)[:files].first.original_filename, '.*')
 
-    raise CanCan::AccessDenied unless can_create_template_in_folder?(template.folder)
+    raise CanCan::AccessDenied unless can_create_template_in_folder?(folder_resolution.authorization_folder)
+
+    template.folder = TemplateFolders.materialize_resolution(current_user, folder_resolution)
 
     Templates.maybe_assign_access(template)
 

@@ -5,20 +5,16 @@ module Templates
     module_function
 
     # rubocop:disable Metrics
-    def call(original_template, author:, external_id: nil, name: nil, folder_name: nil)
-      template = original_template.account.templates.new
+    def call(original_template, author:, external_id: nil, name: nil, folder: nil, destination_account: nil)
+      destination_account ||= original_template.account
+      template = destination_account.templates.new
 
       template.external_id = external_id
       template.shared_link = original_template.shared_link
       template.variables_schema = original_template.variables_schema
       template.author = author
       template.name = name.presence || "#{original_template.name} (#{I18n.t('clone')})"
-
-      if folder_name.present?
-        template.folder = TemplateFolders.find_or_create_by_name(author, folder_name)
-      else
-        template.folder_id = original_template.folder_id
-      end
+      template.folder = folder || original_template.folder
 
       template.submitters, template.fields, template.schema, template.preferences =
         update_submitters_and_fields_and_schema(original_template.submitters.deep_dup,
@@ -32,15 +28,21 @@ module Templates
         template.schema.first['name'] = template.name
       end
 
-      original_template.content_accesses.each do |content_access|
+      copy_content_accesses(template, original_template, destination_account)
+
+      template
+    end
+
+    def copy_content_accesses(template, original_template, destination_account)
+      original_template.content_accesses.includes(:user).each do |content_access|
+        next unless content_access.user&.can_access_account?(destination_account)
+
         template.content_accesses.new(
           user_id: content_access.user_id,
           template_permission: content_access.template_permission,
           submission_permission: content_access.submission_permission
         )
       end
-
-      template
     end
 
     def update_submitters_and_fields_and_schema(cloned_submitters, cloned_fields, cloned_schema, cloned_preferences)

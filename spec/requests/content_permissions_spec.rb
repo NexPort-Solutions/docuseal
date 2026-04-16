@@ -5,6 +5,7 @@ RSpec.describe 'Content permissions' do
   let(:admin_user) { create(:user, account:, email: 'admin@example.com') }
   let(:viewer_user) { create(:user, account:, email: 'viewer@example.com') }
   let(:contributor_user) { create(:user, account:, email: 'contributor@example.com') }
+  let(:default_folder) { account.default_template_folder }
   let!(:folder) { create(:template_folder, account:, author: admin_user, name: 'Protected Folder') }
   let!(:template) { create(:template, account:, author: admin_user, folder:, name: 'Protected Template') }
   let!(:submission) { create(:submission, template:, account:, created_by_user: admin_user, name: 'Protected Submission') }
@@ -43,6 +44,26 @@ RSpec.describe 'Content permissions' do
     end
   end
 
+  describe 'account admin authorization' do
+    it 'keeps direct template access and instance abilities working for account admins' do
+      # Arrange
+      sign_in(admin_user)
+      ability = Ability.new(admin_user, current_account: account)
+
+      # Initial Assert
+      expect(admin_user.account_access_for(account)&.role).to eq(AccountAccess::ACCOUNT_ADMIN_ROLE)
+
+      # Act
+      get template_path(template)
+
+      # Assert
+      expect(response).to have_http_status(:ok)
+      expect(ability.can?(:read, template)).to be(true)
+      expect(ability.can?(:update, template)).to be(true)
+      expect(ability.can?(:destroy, template)).to be(true)
+    end
+  end
+
   describe 'POST /content_accesses' do
     it 'prevents a contributor from removing their own ability to manage a template scope' do
       # Arrange
@@ -78,6 +99,89 @@ RSpec.describe 'Content permissions' do
 
       expect(persisted_access.template_permission).to eq(ContentAccess::ADMIN_PERMISSION)
       expect(persisted_access.submission_permission).to eq(ContentAccess::ADMIN_PERMISSION)
+    end
+  end
+
+  describe 'folder side effects' do
+    before do
+      contributor_user.account_access_for(account).update!(role: AccountAccess::CONTRIBUTOR_ROLE)
+      create(
+        :content_access,
+        user: contributor_user,
+        securable: default_folder,
+        template_permission: ContentAccess::VIEWER_PERMISSION,
+        submission_permission: ContentAccess::VIEWER_PERMISSION
+      )
+      create(
+        :content_access,
+        user: contributor_user,
+        securable: folder,
+        template_permission: ContentAccess::ADMIN_PERMISSION,
+        submission_permission: ContentAccess::ADMIN_PERMISSION
+      )
+      sign_in(contributor_user)
+    end
+
+    it 'does not create folders on unauthorized template create' do
+      # Arrange
+      folder_count = TemplateFolder.count
+
+      # Initial Assert
+      expect(Ability.new(contributor_user, current_account: account).can?(:manage, :template_create)).to be(true)
+
+      # Act
+      post templates_path, params: {
+        template: { name: 'Blocked Template' },
+        folder_name: 'Blocked Folder'
+      }
+
+      # Assert
+      expect(response).to redirect_to(root_path)
+      expect(TemplateFolder.count).to eq(folder_count)
+      expect(account.template_folders.find_by(name: 'Blocked Folder')).to be_nil
+    end
+
+    it 'does not create folders on unauthorized template upload' do
+      # Arrange
+      folder_count = TemplateFolder.count
+      file = fixture_file_upload(Rails.root.join('spec/fixtures/sample-document.pdf'), 'application/pdf')
+
+      # Act
+      post templates_upload_path, params: { files: [file], folder_name: 'Blocked Upload Folder' }
+
+      # Assert
+      expect(response).to redirect_to(root_path)
+      expect(TemplateFolder.count).to eq(folder_count)
+      expect(account.template_folders.find_by(name: 'Blocked Upload Folder')).to be_nil
+    end
+
+    it 'does not create folders on unauthorized template clone' do
+      # Arrange
+      folder_count = TemplateFolder.count
+
+      # Act
+      post template_clone_index_path(template), params: {
+        template: { name: 'Blocked Clone' },
+        folder_name: 'Blocked Clone Folder'
+      }
+
+      # Assert
+      expect(response).to redirect_to(root_path)
+      expect(TemplateFolder.count).to eq(folder_count)
+      expect(account.template_folders.find_by(name: 'Blocked Clone Folder')).to be_nil
+    end
+
+    it 'does not create folders on unauthorized template move' do
+      # Arrange
+      folder_count = TemplateFolder.count
+
+      # Act
+      patch template_folder_path(template), params: { name: 'Blocked Move Folder' }
+
+      # Assert
+      expect(response).to redirect_to(root_path)
+      expect(TemplateFolder.count).to eq(folder_count)
+      expect(account.template_folders.find_by(name: 'Blocked Move Folder')).to be_nil
     end
   end
 

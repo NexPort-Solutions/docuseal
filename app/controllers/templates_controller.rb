@@ -45,10 +45,12 @@ class TemplatesController < ApplicationController
 
   def create
     @template.author = current_user
-    @template.folder = TemplateFolders.find_or_create_by_name(current_user, params[:folder_name])
     @template.account = current_account
+    folder_resolution = TemplateFolders.resolve_by_name(current_account, params[:folder_name])
 
-    raise CanCan::AccessDenied unless can_create_template_in_folder?(@template.folder)
+    raise CanCan::AccessDenied unless can_create_template_in_folder?(folder_resolution.authorization_folder)
+
+    @template.folder = TemplateFolders.materialize_resolution(current_user, folder_resolution)
 
     Templates.maybe_assign_access(@template)
 

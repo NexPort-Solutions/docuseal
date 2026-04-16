@@ -5,6 +5,10 @@ module Api
     load_and_authorize_resource :template
 
     def index
+      @templates ||= current_account.templates.where(
+        id: ContentPermissions::Scope.new(current_user, account: current_account).readable_template_ids
+      )
+
       templates = filter_templates(@templates, params)
 
       templates = paginate(templates.preload(:author, folder: :parent_folder))

@@ -12,15 +12,25 @@ module Api
         associations: [schema_documents: :preview_images_attachments]
       ).call
 
+      folder_resolution =
+        if params[:folder_name].present?
+          TemplateFolders.resolve_by_name(current_account, params[:folder_name])
+        else
+          TemplateFolders::Resolution.new(folder: @template.folder, authorization_folder: @template.folder, requires_creation: false)
+        end
+
+      raise CanCan::AccessDenied unless can_create_template_in_folder?(folder_resolution.authorization_folder)
+
+      target_folder = TemplateFolders.materialize_resolution(current_user, folder_resolution)
+
       cloned_template = Templates::Clone.call(
         @template,
         author: current_user,
         name: params[:name],
         external_id: params[:external_id].presence || params[:application_key],
-        folder_name: params[:folder_name]
+        folder: target_folder,
+        destination_account: current_account
       )
-
-      raise CanCan::AccessDenied unless can_create_template_in_folder?(cloned_template.folder)
 
       cloned_template.source = :api
 
