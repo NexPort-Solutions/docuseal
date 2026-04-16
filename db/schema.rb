@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_12_170200) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_15_194500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gin"
   enable_extension "pg_catalog.plpgsql"
@@ -158,6 +158,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_12_170200) do
     t.datetime "updated_at", null: false
     t.string "username", null: false
     t.index ["username"], name: "index_console1984_users_on_username"
+  end
+
+  create_table "content_accesses", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "securable_id", null: false
+    t.string "securable_type", null: false
+    t.string "submission_permission", default: "inherit", null: false
+    t.string "template_permission", default: "inherit", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["securable_type", "securable_id"], name: "index_content_accesses_on_securable"
+    t.index ["user_id", "securable_type", "securable_id"], name: "index_content_accesses_on_user_and_securable", unique: true
+    t.index ["user_id"], name: "index_content_accesses_on_user_id"
   end
 
   create_table "document_generation_events", force: :cascade do |t|
@@ -560,6 +573,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_12_170200) do
   add_foreign_key "account_linked_accounts", "accounts", column: "linked_account_id"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "content_accesses", "users"
   add_foreign_key "document_generation_events", "submitters"
   add_foreign_key "dynamic_documents", "templates"
   add_foreign_key "email_events", "accounts"

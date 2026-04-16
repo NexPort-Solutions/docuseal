@@ -11,7 +11,7 @@ class TemplateFoldersController < ApplicationController
   def show
     @templates = Template.active.accessible_by(current_ability)
                          .where(folder: [@template_folder, *(params[:q].present? ? @template_folder.subfolders : [])])
-                         .preload(:author, :template_accesses)
+                         .preload(:author, :content_accesses, folder: :content_accesses)
 
     @template_folders =
       @template_folder.subfolders.where(id: Template.accessible_by(current_ability).active.select(:folder_id))

@@ -71,6 +71,7 @@ Rails.application.routes.draw do
     resource :send_reset_password, only: %i[update], controller: 'users_send_reset_password'
   end
   resources :members, only: %i[edit update destroy]
+  resources :content_accesses, only: %i[create]
   post '/accounts/:account_id/select', to: 'account_selections#create', as: :select_account
   resource :user_signature, only: %i[edit update destroy]
   resource :user_initials, only: %i[edit update destroy]

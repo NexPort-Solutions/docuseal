@@ -1,0 +1,67 @@
+<% resolver_class = ContentPermissions::Resolver %>
+<% accesses_by_user_id = securable.content_accesses.index_by(&:user_id) %>
+<% template_permission_options = ContentAccess::TEMPLATE_PERMISSIONS.map { |value| [t(value), value] } %>
+<% submission_permission_options = ContentAccess::SUBMISSION_PERMISSIONS.map { |value| [t(value), value] } %>
+
+<div class="mt-4">
+  <div class="mb-2">
+    <h3 class="text-lg font-semibold"><%= t('permissions') %></h3>
+    <p class="text-sm text-base-content/70"><%= t('content_access_permissions_help') %></p>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="table table-sm">
+      <thead>
+        <tr>
+          <th><%= t('member') %></th>
+          <th><%= t('template_permissions') %></th>
+          <th><%= t('submission_permissions') %></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% current_account_members.each do |member| %>
+          <% member_resolver = resolver_class.new(member, account: current_account) %>
+          <% effective_result = securable.is_a?(Template) ? member_resolver.resolve_template(securable) : member_resolver.resolve_folder(securable) %>
+          <% access = accesses_by_user_id[member.id] %>
+          <% form_id = "#{securable.class.name.underscore}_content_access_#{member.id}" %>
+          <tr>
+            <td class="align-top min-w-52">
+              <div class="font-medium"><%= member.full_name.presence || member.email %></div>
+              <div class="text-xs text-base-content/60"><%= member.email %></div>
+            </td>
+            <td class="align-top min-w-56">
+              <%= form_with url: content_accesses_path, method: :post, id: form_id, class: 'hidden', data: { turbo_frame: 'modal' } do |f| %>
+                <%= f.hidden_field :user_id, name: 'content_access[user_id]', value: member.id %>
+                <%= f.hidden_field :securable_type, name: 'content_access[securable_type]', value: securable.class.name %>
+                <%= f.hidden_field :securable_id, name: 'content_access[securable_id]', value: securable.id %>
+              <% end %>
+              <%= select_tag 'content_access[template_permission]',
+                             options_for_select(template_permission_options, access&.template_permission || ContentAccess::INHERIT_PERMISSION),
+                             form: form_id,
+                             class: 'base-select w-full' %>
+              <div class="text-xs text-base-content/60 mt-2">
+                <%= t('effective_permission_label', permission: t(effective_result.template_permission)) %>
+                <span class="block"><%= content_access_source_label(effective_result.template_source, securable:) %></span>
+              </div>
+            </td>
+            <td class="align-top min-w-56">
+              <%= select_tag 'content_access[submission_permission]',
+                             options_for_select(submission_permission_options, access&.submission_permission || ContentAccess::INHERIT_PERMISSION),
+                             form: form_id,
+                             class: 'base-select w-full' %>
+              <div class="text-xs text-base-content/60 mt-2">
+                <%= t('effective_permission_label', permission: t(effective_result.submission_permission)) %>
+                <span class="block"><%= content_access_source_label(effective_result.submission_source, securable:) %></span>
+              </div>
+            </td>
+            <td class="align-top">
+              <%= button_tag button_title(title: t('save'), disabled_with: t('saving')),
+                             class: 'btn btn-sm btn-neutral text-white whitespace-nowrap',
+                             form: form_id %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

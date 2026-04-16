@@ -71,6 +71,7 @@ class User < ApplicationRecord
   has_many :mcp_tokens, dependent: :destroy
   has_many :templates, dependent: :destroy, foreign_key: :author_id, inverse_of: :author
   has_many :template_folders, dependent: :destroy, foreign_key: :author_id, inverse_of: :author
+  has_many :content_accesses, dependent: :destroy
   has_many :user_configs, dependent: :destroy
   has_many :encrypted_configs, dependent: :destroy, class_name: 'EncryptedUserConfig'
   has_many :email_messages, dependent: :destroy, foreign_key: :author_id, inverse_of: :author

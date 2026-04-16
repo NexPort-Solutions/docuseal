@@ -35,6 +35,7 @@ class TemplateFolder < ApplicationRecord
   has_many :templates, dependent: :destroy, foreign_key: :folder_id, inverse_of: :folder
   has_many :subfolders, class_name: 'TemplateFolder', foreign_key: :parent_folder_id, inverse_of: :parent_folder,
                         dependent: :destroy
+  has_many :content_accesses, as: :securable, dependent: :destroy
   has_many :active_templates, -> { where(archived_at: nil) },
            class_name: 'Template', dependent: :destroy, foreign_key: :folder_id, inverse_of: :folder
 

@@ -1,0 +1,3 @@
+<% if can_manage_content_permissions?(@template) %>
+  <%= render 'content_accesses/table', securable: @template %>
+<% end %>

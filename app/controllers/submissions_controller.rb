@@ -8,10 +8,6 @@ class SubmissionsController < ApplicationController
 
   prepend_before_action :maybe_redirect_com, only: %i[show]
 
-  before_action only: :create do
-    authorize!(:create, Submission)
-  end
-
   FIELD_ICONS = {
     'text' => 'text_size', 'signature' => 'writing_sign', 'date' => 'calendar_event',
     'number' => 'square_number_1', 'image' => 'photo', 'initials' => 'letter_case_upper',
@@ -34,10 +30,12 @@ class SubmissionsController < ApplicationController
   end
 
   def new
-    authorize!(:new, Submission)
+    raise CanCan::AccessDenied unless can_create_submission_from_template?(@template)
   end
 
   def create
+    raise CanCan::AccessDenied unless can_create_submission_from_template?(@template)
+
     save_template_message(@template, params) if params[:save_message] == '1'
 
     [params.delete(:subject), params.delete(:body)] if params[:is_custom_message] != '1'

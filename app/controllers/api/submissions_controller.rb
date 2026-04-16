@@ -5,10 +5,6 @@ module Api
     load_and_authorize_resource :template, only: :create
     load_and_authorize_resource :submission, only: %i[show index destroy]
 
-    before_action only: :create do
-      authorize!(:create, Submission)
-    end
-
     def index
       submissions = Submissions.search(current_user, current_account, @submissions, params[:q])
       submissions = filter_submissions(submissions, params)
@@ -54,6 +50,7 @@ module Api
       return render_sms_not_enabled if params[:send_sms].in?(['true', true, '1']) || nested_sms_request?
 
       return render json: { error: 'Template not found' }, status: :unprocessable_content if @template.nil?
+      raise CanCan::AccessDenied unless can_create_submission_from_template?(@template)
 
       if @template.fields.blank?
         Rollbar.warning("Template does not contain fields: #{@template.id}") if defined?(Rollbar)

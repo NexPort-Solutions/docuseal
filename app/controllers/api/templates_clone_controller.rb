@@ -5,7 +5,7 @@ module Api
     load_and_authorize_resource :template
 
     def create
-      authorize!(:create, @template)
+      raise CanCan::AccessDenied unless can_archive_template?(@template)
 
       ActiveRecord::Associations::Preloader.new(
         records: [@template],
@@ -19,6 +19,8 @@ module Api
         external_id: params[:external_id].presence || params[:application_key],
         folder_name: params[:folder_name]
       )
+
+      raise CanCan::AccessDenied unless can_create_template_in_folder?(cloned_template.folder)
 
       cloned_template.source = :api
 

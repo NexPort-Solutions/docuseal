@@ -18,6 +18,19 @@ class ApplicationController < ActionController::Base
   helper_method :button_title,
                 :accessible_accounts,
                 :admin_managed_accounts,
+                :content_permissions_resolver,
+                :can_create_template_in_folder?,
+                :can_manage_content_permissions?,
+                :can_create_templates?,
+                :can_view_template?,
+                :can_edit_template?,
+                :can_archive_template?,
+                :can_view_submission?,
+                :can_edit_submission?,
+                :can_archive_submission?,
+                :can_create_submission_from_template?,
+                :content_access_source_label,
+                :current_account_members,
                 :current_account,
                 :current_account_access,
                 :true_ability,
@@ -119,6 +132,10 @@ class ApplicationController < ActionController::Base
     @current_ability ||= Ability.new(current_user, current_account:)
   end
 
+  def content_permissions_resolver
+    @content_permissions_resolver ||= ContentPermissions::Resolver.new(current_user, account: current_account)
+  end
+
   def accessible_accounts
     return Account.none unless current_user
 
@@ -129,6 +146,68 @@ class ApplicationController < ActionController::Base
     return Account.none unless current_user
 
     @admin_managed_accounts ||= current_user.admin_managed_accounts
+  end
+
+  def current_account_members
+    return User.none unless current_account
+
+    @current_account_members ||= User.active
+                                   .joins(:account_accesses)
+                                   .where(account_accesses: { account_id: current_account.id })
+                                   .distinct
+                                   .order(:first_name, :last_name, :email)
+  end
+
+  def can_create_template_in_folder?(folder)
+    return false unless folder
+
+    content_permissions_resolver.can_create_template_in_folder?(folder)
+  end
+
+  def can_create_templates?
+    current_account&.template_folders&.any? { |folder| can_create_template_in_folder?(folder) } || false
+  end
+
+  def can_manage_content_permissions?(securable)
+    content_permissions_resolver.can_manage_content_permissions?(securable)
+  end
+
+  def can_view_template?(template)
+    content_permissions_resolver.can_view_template?(template)
+  end
+
+  def can_edit_template?(template)
+    content_permissions_resolver.can_edit_template?(template)
+  end
+
+  def can_archive_template?(template)
+    content_permissions_resolver.can_archive_template?(template)
+  end
+
+  def can_view_submission?(submission)
+    content_permissions_resolver.can_view_submission?(submission)
+  end
+
+  def can_edit_submission?(submission)
+    content_permissions_resolver.can_edit_submission?(submission)
+  end
+
+  def can_archive_submission?(submission)
+    content_permissions_resolver.can_archive_submission?(submission)
+  end
+
+  def can_create_submission_from_template?(template)
+    content_permissions_resolver.can_create_submission_from_template?(template)
+  end
+
+  def content_access_source_label(source, securable: nil)
+    return t('content_access_inherited_from_account_role') if source&.kind == :account_role
+    return t('content_access_not_accessible') if source&.kind == :no_membership
+    return t('content_access_explicit') if source&.kind == :explicit && source.record_type == 'Template'
+    return t('content_access_explicit_on_folder') if source&.kind == :explicit && source.record_type == 'TemplateFolder' && securable.is_a?(TemplateFolder) && source.record_id == securable.id
+    return t('content_access_inherited_from_folder', folder_name: source.name) if source&.kind == :explicit
+
+    t('content_access_inherited')
   end
 
   def branding_account

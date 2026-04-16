@@ -26,6 +26,8 @@ module TemplateFolders
   end
 
   def filter_active_folders(template_folders, templates)
+    return template_folders.none unless templates
+
     folder_exists =
       templates.active.where(TemplateFolder.arel_table[:id].eq(Template.arel_table[:folder_id]))
                .select(1).limit(1).arel.exists

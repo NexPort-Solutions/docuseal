@@ -7,8 +7,11 @@ class TemplatesFoldersController < ApplicationController
 
   def update
     name = [params[:parent_name], params[:name]].compact_blank.join(' / ')
+    target_folder = TemplateFolders.find_or_create_by_name(current_user, name)
 
-    @template.folder = TemplateFolders.find_or_create_by_name(current_user, name)
+    raise CanCan::AccessDenied unless can_create_template_in_folder?(target_folder)
+
+    @template.folder = target_folder
 
     if @template.save
       redirect_back(fallback_location: template_path(@template), notice: I18n.t('document_template_has_been_moved'))

@@ -102,6 +102,22 @@ module Api
       @current_ability ||= Ability.new(current_user, current_account:)
     end
 
+    def content_permissions_resolver
+      @content_permissions_resolver ||= ContentPermissions::Resolver.new(current_user, account: current_account)
+    end
+
+    def can_create_template_in_folder?(folder)
+      content_permissions_resolver.can_create_template_in_folder?(folder)
+    end
+
+    def can_archive_template?(template)
+      content_permissions_resolver.can_archive_template?(template)
+    end
+
+    def can_create_submission_from_template?(template)
+      content_permissions_resolver.can_create_submission_from_template?(template)
+    end
+
     def set_noindex_headers
       headers['X-Robots-Tag'] = 'noindex'
     end

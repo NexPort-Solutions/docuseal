@@ -48,6 +48,8 @@ class TemplatesController < ApplicationController
     @template.folder = TemplateFolders.find_or_create_by_name(current_user, params[:folder_name])
     @template.account = current_account
 
+    raise CanCan::AccessDenied unless can_create_template_in_folder?(@template.folder)
+
     Templates.maybe_assign_access(@template)
 
     if @template.save

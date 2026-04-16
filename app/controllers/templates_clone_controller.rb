@@ -4,7 +4,7 @@ class TemplatesCloneController < ApplicationController
   load_and_authorize_resource :template, instance_name: :base_template
 
   def new
-    authorize!(:create, Template)
+    raise CanCan::AccessDenied unless can_archive_template?(@base_template)
 
     @template = Template.new(name: "#{@base_template.name} (#{I18n.t('clone')})")
   end
@@ -19,8 +19,6 @@ class TemplatesCloneController < ApplicationController
                                                       name: params.dig(:template, :name),
                                                       folder_name: params[:folder_name])
 
-    authorize!(:create, @template)
-
     if params[:account_id].present? && true_ability.can?(:manage, Account.find(params[:account_id]))
       @template.account_id = params[:account_id]
       @template.author = true_user if true_user.account_id == @template.account_id
@@ -28,6 +26,9 @@ class TemplatesCloneController < ApplicationController
     else
       @template.account = current_account
     end
+
+    raise CanCan::AccessDenied unless can_archive_template?(@base_template)
+    raise CanCan::AccessDenied unless can_create_template_in_folder?(@template.folder)
 
     Templates.maybe_assign_access(@template)
 

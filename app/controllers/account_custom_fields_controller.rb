@@ -4,7 +4,7 @@ class AccountCustomFieldsController < ApplicationController
   before_action :load_account_config, only: :create
 
   def create
-    authorize!(:create, Template)
+    authorize!(:manage, :template_create)
 
     @account_config.update!(account_config_params)
 

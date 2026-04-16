@@ -5,7 +5,7 @@ class TemplatesArchivedController < ApplicationController
 
   def index
     @templates = @templates.where.not(archived_at: nil)
-                           .preload(:author, :template_accesses, folder: :parent_folder)
+                           .preload(:author, :content_accesses, folder: %i[parent_folder content_accesses])
                            .order(id: :desc)
 
     @templates = Templates.search(current_user, @templates, params[:q])

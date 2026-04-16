@@ -11,6 +11,11 @@ class TemplatesDashboardController < ApplicationController
   helper_method :selected_order
 
   def index
+    content_scope = ContentPermissions::Scope.new(current_user, account: current_account)
+
+    @template_folders ||= current_account.template_folders.where(id: content_scope.readable_folder_ids)
+    @templates ||= current_account.templates.where(id: content_scope.readable_template_ids)
+
     @template_folders =
       TemplateFolders.filter_active_folders(@template_folders.where(parent_folder_id: nil), @templates)
 
@@ -27,7 +32,7 @@ class TemplatesDashboardController < ApplicationController
       @templates = @templates.none
     else
       @template_folders = @template_folders.reject { |e| e.name == TemplateFolder::DEFAULT_NAME }
-      @templates = filter_templates(@templates).preload(:author, :template_accesses)
+      @templates = filter_templates(@templates).preload(:author, :content_accesses, folder: :content_accesses)
       @templates = Templates::Order.call(@templates, current_account:, order: selected_order)
 
       limit =

@@ -32,8 +32,12 @@ module Templates
         template.schema.first['name'] = template.name
       end
 
-      original_template.template_accesses.each do |template_access|
-        template.template_accesses.new(user_id: template_access.user_id)
+      original_template.content_accesses.each do |content_access|
+        template.content_accesses.new(
+          user_id: content_access.user_id,
+          template_permission: content_access.template_permission,
+          submission_permission: content_access.submission_permission
+        )
       end
 
       template

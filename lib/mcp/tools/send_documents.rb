@@ -53,8 +53,9 @@ module Mcp
         template = Template.accessible_by(current_ability).find_by(id: arguments['template_id'])
 
         return { content: [{ type: 'text', text: 'Template not found' }], isError: true } unless template
+        resolver = ContentPermissions::Resolver.new(current_user, account: current_user.account)
 
-        current_ability.authorize!(:create, Submission.new(template:, account_id: current_user.account_id))
+        return { content: [{ type: 'text', text: 'Not authorized to send submissions from this template' }], isError: true } unless resolver.can_create_submission_from_template?(template)
 
         return { content: [{ type: 'text', text: 'Template has no fields' }], isError: true } if template.fields.blank?
 

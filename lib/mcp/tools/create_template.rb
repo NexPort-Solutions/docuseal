@@ -40,9 +40,11 @@ module Mcp
 
       # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       def call(arguments, current_user, current_ability)
-        current_ability.authorize!(:create, Template.new(account_id: current_user.account_id, author: current_user))
-
         account = current_user.account
+        resolver = ContentPermissions::Resolver.new(current_user, account:)
+        default_folder = account.default_template_folder
+
+        return { content: [{ type: 'text', text: 'Not authorized to create templates in the default folder' }], isError: true } unless resolver.can_create_template_in_folder?(default_folder)
 
         if arguments['file'].present?
           tempfile = Tempfile.new
@@ -71,7 +73,7 @@ module Mcp
         template = Template.new(
           account:,
           author: current_user,
-          folder: account.default_template_folder,
+          folder: default_folder,
           name: arguments['name'].presence || File.basename(filename, '.*')
         )
 

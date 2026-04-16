@@ -38,6 +38,8 @@ en: &en
   logo: Logo
   platform_admin: Platform admin
   viewer: Viewer
+  no_access: No Access
+  inherit: Inherit
   contributor: Contributor
   account_admin: Account admin
   account_role: Account role
@@ -305,6 +307,18 @@ en: &en
   save: Save
   saving: Saving
   changes_have_been_saved: Changes have been saved.
+  permissions: Permissions
+  template_permissions: Template permissions
+  submission_permissions: Submission permissions
+  content_access_permissions_help: Assign per-user template and submission access for this folder or template. Inherit follows the nearest parent or the member's account role.
+  content_access_explicit: Explicit on this template
+  content_access_explicit_on_folder: Explicit on this folder
+  content_access_inherited: Inherited
+  content_access_inherited_from_folder: Inherited from folder %{folder_name}
+  content_access_inherited_from_account_role: Inherited from account role
+  content_access_not_accessible: Not accessible
+  effective_permission_label: "Effective: %{permission}"
+  content_access_self_lockout_prevented: You cannot remove your own permission to manage this scope.
   unlock_with_docuseal_pro: Unlock with DocuSeal Pro
   use_your_own_certificates_to_sign_and_verify_pdf_files: Use your own certificates to sign and verify PDF files.
   upload_certificate: Upload Certificate

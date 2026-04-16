@@ -33,7 +33,7 @@
       <% if params[:q].present? || @pagy.pages > 1 || @template_folders.present? %>
         <%= render 'shared/search_input' %>
       <% end %>
-      <% if can?(:create, ::Template) %>
+      <% if can_create_template_in_folder?(@template_folder) %>
         <span class="hidden sm:block">
           <%= render 'templates/upload_button', folder_name: @template_folder.full_name %>
         </span>
