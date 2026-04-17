@@ -48,6 +48,8 @@ class SubmissionsController < ApplicationController
                                        mark_as_sent: params[:send_email] == '1',
                                        emails: params[:emails],
                                        params: params.merge('send_completed_email' => true))
+      elsif params[:submissions_json].present?
+        create_submissions_from_json(@template, params)
       else
         create_submissions(@template, submissions_params, params)
       end
@@ -59,6 +61,10 @@ class SubmissionsController < ApplicationController
     SearchEntries.enqueue_reindex(submissions)
 
     redirect_to template_path(@template), notice: I18n.t('new_recipients_have_been_added')
+  rescue JSON::ParserError
+    render turbo_stream: turbo_stream.replace(:submitters_error, partial: 'submissions/error',
+                                                                 locals: { error: I18n.t('unable_to_parse_submission_list') }),
+           status: :unprocessable_content
   rescue Submissions::CreateFromSubmitters::BaseError => e
     render turbo_stream: turbo_stream.replace(:submitters_error, partial: 'submissions/error',
                                                                  locals: { error: e.message }),
@@ -85,16 +91,24 @@ class SubmissionsController < ApplicationController
   private
 
   def create_submissions(template, submissions_params, params)
-    submissions_attrs = submissions_params[:submission].to_h.values
+    create_submissions_from_attrs(template, submissions_params[:submission].to_h.values, params)
+  end
 
-    submissions_attrs, _, new_fields =
+  def create_submissions_from_json(template, params)
+    submissions_attrs = JSON.parse(params[:submissions_json]).map(&:deep_symbolize_keys)
+
+    create_submissions_from_attrs(template, submissions_attrs, params)
+  end
+
+  def create_submissions_from_attrs(template, submissions_attrs, params)
+    normalized_submissions_attrs, _, new_fields =
       Submissions::NormalizeParamUtils.normalize_submissions_params!(submissions_attrs, template, add_fields: true)
 
     Submissions.create_from_submitters(template: template,
                                        user: current_user,
                                        source: :invite,
                                        submitters_order: params[:preserve_order] == '1' ? 'preserved' : 'random',
-                                       submissions_attrs:,
+                                       submissions_attrs: normalized_submissions_attrs,
                                        new_fields:,
                                        params: params.merge('send_completed_email' => true))
   end

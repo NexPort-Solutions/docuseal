@@ -26,6 +26,17 @@
         <%= f.button button_title(title: t('save'), disabled_with: t('saving')), class: 'base-button' %>
       </div>
     <% end %>
+    <% unless @template_folder.default? %>
+      <div class="mt-4">
+        <%= button_to folder_path(@template_folder),
+                      method: :delete,
+                      class: 'btn btn-outline btn-error w-full',
+                      form: { data: { turbo_frame: :_top } },
+                      data: { turbo_confirm: t('are_you_sure_') } do %>
+          <%= t('delete_folder') %>
+        <% end %>
+      </div>
+    <% end %>
   </div>
 
   <% if can_manage_content_permissions?(@template_folder) %>

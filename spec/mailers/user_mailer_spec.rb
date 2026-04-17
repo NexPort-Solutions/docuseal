@@ -122,5 +122,68 @@ RSpec.describe UserMailer do
     ensure
       Rails.application.config.action_mailer.delivery_method = original_delivery_method
     end
+
+    it 'falls back to MAIL_FROM when SMTP_FROM is not configured' do
+      # Arrange
+      original_delivery_method = Rails.application.config.action_mailer.delivery_method
+      account = create(:account)
+      create(:account_config,
+             account:,
+             key: AccountConfig::BRANDING_SETTINGS_KEY,
+             value: {
+               'display_name' => 'Northwind Health',
+               'sender_name' => 'Northwind Notifications',
+               'support_email' => 'support@northwind.example'
+             })
+      user = create(:user, account:, email: 'invitee@example.com')
+      allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new('production'))
+      Rails.application.config.action_mailer.delivery_method = :smtp
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with('SMTP_FROM').and_return(nil)
+      allow(ENV).to receive(:[]).with('MAIL_FROM').and_return('smtp@delivery.example')
+
+      # Initial Assert
+      expect(account.sender_name).to eq('Northwind Notifications')
+
+      # Act
+      mail = described_class.invitation_email(user)
+      ActionMailerConfigsInterceptor.delivering_email(mail)
+
+      # Assert
+      expect(mail.from).to eq(['smtp@delivery.example'])
+      expect(mail[:from].display_names).to eq(['Northwind Notifications'])
+    ensure
+      Rails.application.config.action_mailer.delivery_method = original_delivery_method
+    end
+
+    it 'keeps the existing sender when no SMTP from env var is configured' do
+      # Arrange
+      original_delivery_method = Rails.application.config.action_mailer.delivery_method
+      account = create(:account)
+      create(:account_config,
+             account:,
+             key: AccountConfig::BRANDING_SETTINGS_KEY,
+             value: {
+               'display_name' => 'Northwind Health',
+               'sender_name' => 'Northwind Notifications',
+               'support_email' => 'support@northwind.example'
+             })
+      user = create(:user, account:, email: 'invitee@example.com')
+      allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new('production'))
+      Rails.application.config.action_mailer.delivery_method = :smtp
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with('SMTP_FROM').and_return(nil)
+      allow(ENV).to receive(:[]).with('MAIL_FROM').and_return(nil)
+
+      # Act
+      mail = described_class.invitation_email(user)
+      ActionMailerConfigsInterceptor.delivering_email(mail)
+
+      # Assert
+      expect(mail.from).to eq(['support@northwind.example'])
+      expect(mail[:from].display_names).to eq(['Northwind Notifications'])
+    ensure
+      Rails.application.config.action_mailer.delivery_method = original_delivery_method
+    end
   end
 end

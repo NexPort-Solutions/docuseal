@@ -16,13 +16,7 @@ module ActionMailerConfigsInterceptor
     end
 
     if Rails.env.production? && Rails.application.config.action_mailer.delivery_method
-      from = ENV.fetch('SMTP_FROM').to_s.split(',').sample
-
-      if from.match?(User::FULL_EMAIL_REGEXP)
-        message[:from] = message[:from].to_s.sub(User::EMAIL_REGEXP, from)
-      else
-        message.from = from
-      end
+      apply_from_address(message, smtp_from_env)
 
       return message
     end
@@ -32,19 +26,31 @@ module ActionMailerConfigsInterceptor
 
       if email_configs
         message.delivery_method(:smtp, build_smtp_configs_hash(email_configs))
-        from = email_configs.value['from_email'].to_s
-
-        if from.match?(User::FULL_EMAIL_REGEXP)
-          message[:from] = message[:from].to_s.sub(User::EMAIL_REGEXP, from)
-        else
-          message.from = from
-        end
+        apply_from_address(message, email_configs.value['from_email'])
       else
         message.delivery_method(:test)
       end
     end
 
     message
+  end
+
+  def smtp_from_env
+    (ENV['SMTP_FROM'].presence || ENV['MAIL_FROM'].presence).to_s.split(',').map(&:strip).reject(&:blank?).sample
+  end
+
+  def apply_from_address(message, from)
+    return if from.blank?
+
+    current_from = message[:from].to_s
+
+    if from.match?(User::FULL_EMAIL_REGEXP)
+      message[:from] = from
+    elsif current_from.match?(User::EMAIL_REGEXP)
+      message[:from] = current_from.sub(User::EMAIL_REGEXP, from)
+    else
+      message.from = from
+    end
   end
 
   def build_smtp_configs_hash(email_configs)

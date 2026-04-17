@@ -640,6 +640,10 @@ en: &en
   file_is_missing: File is missing
   folder_name_has_been_updated: Folder name has been updated.
   unable_to_rename_folder: Unable to rename folder.
+  folder_has_been_deleted: Folder has been deleted.
+  folder_must_be_empty_before_deleting: Folder must be empty before deleting.
+  default_folder_cannot_be_deleted: Default folder cannot be deleted.
+  delete_folder: Delete Folder
   template_has_been_removed: Template has been removed.
   template_has_been_archived: Template has been archived.
   template_has_been_cloned: Template has been cloned.
@@ -673,6 +677,7 @@ en: &en
   account_has_been_removed: Account has been removed.
   logo_has_been_uploaded: Logo has been uploaded.
   invalid_file_type: Invalid file type
+  unable_to_read_spreadsheet: Unable to read spreadsheet.
   upload_file: Upload file
   upgrade_your_plan_to_invite_more_users_contact_email: 'Upgrade your plan to invite more users (contact %{email}).'
   contact_your_admin_email_to_invite_more_users: 'Contact your admin %{email} to invite more users.'
@@ -729,6 +734,7 @@ en: &en
   via_phone: via Phone
   detailed: Detailed
   upload_list: Upload List
+  unable_to_parse_submission_list: Unable to parse submission list.
   creating: Creating
   open_source_documents_software: open source documents software
   copy_link: Copy Link
@@ -1660,6 +1666,10 @@ es: &es
   file_is_missing: Falta el archivo
   folder_name_has_been_updated: El nombre de la carpeta ha sido actualizado.
   unable_to_rename_folder: No se pudo renombrar la carpeta.
+  folder_has_been_deleted: La carpeta ha sido eliminada.
+  folder_must_be_empty_before_deleting: La carpeta debe estar vacía antes de eliminarla.
+  default_folder_cannot_be_deleted: La carpeta predeterminada no se puede eliminar.
+  delete_folder: Eliminar carpeta
   template_has_been_removed: La plantilla ha sido eliminada.
   template_has_been_archived: La plantilla ha sido archivada.
   template_has_been_cloned: La plantilla ha sido clonada.
@@ -1693,6 +1703,7 @@ es: &es
   account_has_been_removed: La cuenta ha sido eliminada.
   logo_has_been_uploaded: El logotipo ha sido subido.
   invalid_file_type: Tipo de archivo no válido
+  unable_to_read_spreadsheet: No se pudo leer la hoja de cálculo.
   upload_file: Subir archivo
   upgrade_your_plan_to_invite_more_users_contact_email: 'Actualiza tu plan para invitar a más usuarios (contacta a %{email}).'
   contact_your_admin_email_to_invite_more_users: 'Contacta a tu administrador %{email} para invitar a más usuarios.'
@@ -1749,6 +1760,7 @@ es: &es
   via_phone: por Teléfono
   detailed: Detallado
   upload_list: Subir lista
+  unable_to_parse_submission_list: No se pudo interpretar la lista de destinatarios.
   creating: Creando
   open_source_documents_software: software de documentos de código abierto
   copy_link: Copiar enlace
@@ -2677,6 +2689,10 @@ it: &it
   file_is_missing: File mancante
   folder_name_has_been_updated: Il nome della cartella è stato aggiornato.
   unable_to_rename_folder: Impossibile rinominare la cartella.
+  folder_has_been_deleted: La cartella è stata eliminata.
+  folder_must_be_empty_before_deleting: La cartella deve essere vuota prima di eliminarla.
+  default_folder_cannot_be_deleted: La cartella predefinita non può essere eliminata.
+  delete_folder: Elimina cartella
   template_has_been_removed: Il modello è stato rimosso.
   template_has_been_archived: Il modello è stato archiviato.
   template_has_been_cloned: Il modello è stato clonato.
@@ -2710,6 +2726,7 @@ it: &it
   account_has_been_removed: "L'account è stato rimosso."
   logo_has_been_uploaded: Il logo è stato caricato.
   invalid_file_type: Tipo di file non valido
+  unable_to_read_spreadsheet: Impossibile leggere il foglio di calcolo.
   upload_file: Carica file
   upgrade_your_plan_to_invite_more_users_contact_email: 'Aggiorna il tuo piano per invitare più utenti (contatta %{email}).'
   contact_your_admin_email_to_invite_more_users: 'Contatta il tuo amministratore %{email} per invitare più utenti.'
@@ -2766,6 +2783,7 @@ it: &it
   via_phone: via telefono
   detailed: Dettagliato
   upload_list: Carica elenco
+  unable_to_parse_submission_list: Impossibile leggere l'elenco dei destinatari.
   creating: Creazione
   open_source_documents_software: software di documenti open source
   copy_link: Copia link
@@ -3695,6 +3713,10 @@ fr: &fr
   file_is_missing: Fichier manquant
   folder_name_has_been_updated: Le nom du dossier a été mis à jour.
   unable_to_rename_folder: Impossible de renommer le dossier.
+  folder_has_been_deleted: Le dossier a été supprimé.
+  folder_must_be_empty_before_deleting: Le dossier doit être vide avant d'être supprimé.
+  default_folder_cannot_be_deleted: Le dossier par défaut ne peut pas être supprimé.
+  delete_folder: Supprimer le dossier
   template_has_been_removed: Le modèle a été supprimé.
   template_has_been_archived: Le modèle a été archivé.
   template_has_been_cloned: Le modèle a été cloné.
@@ -3728,6 +3750,7 @@ fr: &fr
   account_has_been_removed: Le compte a été supprimé.
   logo_has_been_uploaded: Le logo a été téléversé.
   invalid_file_type: Type de fichier invalide
+  unable_to_read_spreadsheet: Impossible de lire le tableur.
   upload_file: Téléverser un fichier
   upgrade_your_plan_to_invite_more_users_contact_email: Mettez à niveau votre formule pour inviter davantage d’utilisateurs (contact %{email}).
   contact_your_admin_email_to_invite_more_users: Contactez votre administrateur %{email} pour inviter plus d’utilisateurs.
@@ -3784,6 +3807,7 @@ fr: &fr
   via_phone: Par téléphone
   detailed: Détaillé
   upload_list: Téléverser une liste
+  unable_to_parse_submission_list: Impossible d'analyser la liste des destinataires.
   creating: Création en cours
   open_source_documents_software: logiciel de documents open source
   copy_link: Copier le lien
@@ -4709,6 +4733,10 @@ pt: &pt
   file_is_missing: O arquivo está ausente
   folder_name_has_been_updated: O nome da pasta foi atualizado.
   unable_to_rename_folder: Não foi possível renomear a pasta.
+  folder_has_been_deleted: A pasta foi removida.
+  folder_must_be_empty_before_deleting: A pasta precisa estar vazia antes de ser excluída.
+  default_folder_cannot_be_deleted: A pasta padrão não pode ser excluída.
+  delete_folder: Excluir pasta
   template_has_been_removed: O modelo foi removido.
   template_has_been_archived: O modelo foi arquivado.
   template_has_been_cloned: O modelo foi clonado.
@@ -4742,6 +4770,7 @@ pt: &pt
   account_has_been_removed: A conta foi removida.
   logo_has_been_uploaded: O logotipo foi enviado.
   invalid_file_type: Tipo de arquivo inválido
+  unable_to_read_spreadsheet: Não foi possível ler a planilha.
   upload_file: Enviar arquivo
   upgrade_your_plan_to_invite_more_users_contact_email: 'Faça upgrade do seu plano para convidar mais usuários (contato %{email}).'
   contact_your_admin_email_to_invite_more_users: 'Entre em contato com seu administrador %{email} para convidar mais usuários.'
@@ -4798,6 +4827,7 @@ pt: &pt
   via_phone: via Telefone
   detailed: Detalhado
   upload_list: Carregar lista
+  unable_to_parse_submission_list: Não foi possível processar a lista de destinatários.
   creating: Criando
   open_source_documents_software: software de documentos de código aberto
   copy_link: Copiar link
@@ -5726,6 +5756,10 @@ de: &de
   file_is_missing: Datei fehlt
   folder_name_has_been_updated: Der Ordnername wurde aktualisiert.
   unable_to_rename_folder: Der Ordner konnte nicht umbenannt werden.
+  folder_has_been_deleted: Der Ordner wurde gelöscht.
+  folder_must_be_empty_before_deleting: Der Ordner muss leer sein, bevor er gelöscht werden kann.
+  default_folder_cannot_be_deleted: Der Standardordner kann nicht gelöscht werden.
+  delete_folder: Ordner löschen
   template_has_been_removed: Die Vorlage wurde entfernt.
   template_has_been_archived: Die Vorlage wurde archiviert.
   template_has_been_cloned: Die Vorlage wurde geklont.
@@ -5759,6 +5793,7 @@ de: &de
   account_has_been_removed: Das Konto wurde entfernt.
   logo_has_been_uploaded: Das Logo wurde hochgeladen.
   invalid_file_type: Ungültiger Dateityp
+  unable_to_read_spreadsheet: Tabelle konnte nicht gelesen werden.
   upload_file: Datei hochladen
   upgrade_your_plan_to_invite_more_users_contact_email: 'Führen Sie ein Upgrade durch, um mehr Benutzer einzuladen (Kontakt %{email}).'
   contact_your_admin_email_to_invite_more_users: 'Kontaktieren Sie Ihren Administrator %{email}, um mehr Benutzer einzuladen.'
@@ -5815,6 +5850,7 @@ de: &de
   via_phone: per Telefon
   detailed: Detailliert
   upload_list: Liste hochladen
+  unable_to_parse_submission_list: Empfängerliste konnte nicht verarbeitet werden.
   creating: Erstellen
   open_source_documents_software: Open-Source-Dokumentensoftware
   copy_link: Link kopieren
@@ -7132,6 +7168,10 @@ nl: &nl
   file_is_missing: Bestand ontbreekt
   folder_name_has_been_updated: Mapnaam is bijgewerkt.
   unable_to_rename_folder: Kan map niet hernoemen.
+  folder_has_been_deleted: Map is verwijderd.
+  folder_must_be_empty_before_deleting: De map moet leeg zijn voordat deze kan worden verwijderd.
+  default_folder_cannot_be_deleted: De standaardmap kan niet worden verwijderd.
+  delete_folder: Map verwijderen
   template_has_been_removed: Sjabloon is verwijderd.
   template_has_been_archived: Sjabloon is gearchiveerd.
   template_has_been_cloned: Sjabloon is gekloond.
@@ -7165,6 +7205,7 @@ nl: &nl
   account_has_been_removed: Account is verwijderd.
   logo_has_been_uploaded: Logo is geüpload.
   invalid_file_type: Ongeldig bestandstype
+  unable_to_read_spreadsheet: Kan spreadsheet niet lezen.
   upload_file: Bestand uploaden
   upgrade_your_plan_to_invite_more_users_contact_email: Upgrade uw abonnement om meer gebruikers uit te nodigen (contact %{email}).
   contact_your_admin_email_to_invite_more_users: Neem contact op met uw beheerder %{email} om meer gebruikers uit te nodigen.
@@ -7221,6 +7262,7 @@ nl: &nl
   via_phone: via telefoon
   detailed: Gedetailleerd
   upload_list: Lijst uploaden
+  unable_to_parse_submission_list: Kan de lijst met ontvangers niet verwerken.
   creating: Aanmaken
   open_source_documents_software: open-sourcesoftware voor documenten
   copy_link: Link kopiëren

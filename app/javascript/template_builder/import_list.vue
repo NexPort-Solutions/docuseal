@@ -207,7 +207,7 @@
               ref="input"
               type="file"
               name="file"
-              accept=".xlsx, .xls, .csv"
+              accept=".xlsx, .csv"
               @change="onSelectFile"
             >
           </form>

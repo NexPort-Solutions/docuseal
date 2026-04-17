@@ -113,6 +113,47 @@ RSpec.describe 'Encrypted settings resilience' do
       expect(encrypted_config.reload.value['host']).to eq('smtp.example.com')
       expect(encrypted_config.value['from_email']).to eq('ops@example.com')
     end
+
+    it 'saves global SMTP settings when only MAIL_FROM is configured in the environment' do
+      # Arrange
+      sign_in(platform_admin)
+      original_delivery_method = Rails.application.config.action_mailer.delivery_method
+      ActionMailer::Base.deliveries.clear
+      allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new('production'))
+      Rails.application.config.action_mailer.delivery_method = :test
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with('SMTP_FROM').and_return(nil)
+      allow(ENV).to receive(:[]).with('MAIL_FROM').and_return('ops@example.com')
+
+      params = {
+        global_encrypted_config: {
+          value: {
+            host: 'smtp.example.com',
+            port: '587',
+            username: 'ops@example.com',
+            password: 'new-password',
+            domain: 'example.com',
+            authentication: 'plain',
+            security: 'tls',
+            from_email: 'ops@example.com'
+          }
+        }
+      }
+
+      # Initial Assert
+      expect(GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::EMAIL_SMTP_KEY)).to be_nil
+
+      # Act
+      post admin_email_index_path, params: params
+
+      # Assert
+      expect(response).to redirect_to(admin_email_index_path)
+      expect(flash[:notice]).to eq(I18n.t('changes_have_been_saved'))
+      expect(GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::EMAIL_SMTP_KEY)&.value&.dig('host')).to eq('smtp.example.com')
+      expect(ActionMailer::Base.deliveries.last&.from).to eq(['ops@example.com'])
+    ensure
+      Rails.application.config.action_mailer.delivery_method = original_delivery_method
+    end
   end
 
   describe 'GET /settings/email' do

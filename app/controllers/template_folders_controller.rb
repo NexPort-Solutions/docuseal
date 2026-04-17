@@ -54,6 +54,20 @@ class TemplateFoldersController < ApplicationController
     end
   end
 
+  def destroy
+    if @template_folder.default?
+      redirect_to folder_path(@template_folder), alert: I18n.t('default_folder_cannot_be_deleted')
+    elsif @template_folder.deletable?
+      redirect_path = @template_folder.parent_folder ? folder_path(@template_folder.parent_folder) : templates_path
+
+      @template_folder.destroy!
+
+      redirect_to redirect_path, notice: I18n.t('folder_has_been_deleted')
+    else
+      redirect_to folder_path(@template_folder), alert: I18n.t('folder_must_be_empty_before_deleting')
+    end
+  end
+
   private
 
   def selected_order

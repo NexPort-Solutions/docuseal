@@ -91,6 +91,7 @@ Rails.application.routes.draw do
   resources :submitters_autocomplete, only: %i[index]
   resources :submitters_resubmit, only: %i[update]
   resources :template_folders_autocomplete, only: %i[index]
+  post '/upload_spreadsheet', to: 'upload_spreadsheets#create'
   resources :webhook_secret, only: %i[show update]
   resources :webhook_preferences, only: %i[update]
   resource :templates_upload, only: %i[create]

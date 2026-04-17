@@ -50,6 +50,10 @@ class TemplateFolder < ApplicationRecord
   end
 
   def default?
-    name == DEFAULT_NAME
+    account.present? ? account.default_template_folder.id == id : name == DEFAULT_NAME
+  end
+
+  def deletable?
+    !default? && templates.none? && subfolders.none?
   end
 end
