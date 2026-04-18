@@ -8,6 +8,15 @@ RSpec.describe 'Encrypted settings resilience' do
   let(:platform_admin) { create(:user, account:, role: User::PLATFORM_ADMIN_ROLE) }
   let(:warning_message) { 'Stored settings could not be read. Re-enter them and save again.' }
 
+  def corrupt_encrypted_value!(record)
+    table_name = record.class.connection.quote_table_name(record.class.table_name)
+    raw_value = record.class.connection.select_value("SELECT value FROM #{table_name} WHERE id = #{record.id}")
+    tampered_value = raw_value.sub(/.$/, raw_value[-1] == 'A' ? 'B' : 'A')
+    quoted_value = record.class.connection.quote(tampered_value)
+
+    record.class.connection.execute("UPDATE #{table_name} SET value = #{quoted_value} WHERE id = #{record.id}")
+  end
+
   def stub_undecryptable_account_config(account:, key:, value:)
     broken_config = create(:encrypted_config, account:, key:, value:)
 
@@ -74,16 +83,7 @@ RSpec.describe 'Encrypted settings resilience' do
       # Arrange
       sign_in(platform_admin)
       encrypted_config = create(:global_encrypted_config, key: GlobalEncryptedConfig::EMAIL_SMTP_KEY, value: { 'host' => 'broken.example.com' })
-      unreadable_result = EncryptedConfigValueReader::Result.new(value: nil, unreadable: true)
-      fetch_calls = 0
-
-      allow(EncryptedConfigValueReader).to receive(:fetch).and_wrap_original do |original, record, source:, key:|
-        if record == encrypted_config && key == GlobalEncryptedConfig::EMAIL_SMTP_KEY && (fetch_calls += 1) == 1
-          unreadable_result
-        else
-          original.call(record, source:, key:)
-        end
-      end
+      corrupt_encrypted_value!(encrypted_config)
 
       params = {
         global_encrypted_config: {
@@ -101,7 +101,7 @@ RSpec.describe 'Encrypted settings resilience' do
       }
 
       # Initial Assert
-      expect(encrypted_config.value['host']).to eq('broken.example.com')
+      expect { encrypted_config.reload.value }.to raise_error(ActiveRecord::Encryption::Errors::Decryption)
 
       # Act
       post admin_email_index_path, params: params
@@ -110,8 +110,9 @@ RSpec.describe 'Encrypted settings resilience' do
       # Assert
       expect(response).to have_http_status(:ok)
       expect(response.body).not_to include(warning_message)
-      expect(encrypted_config.reload.value['host']).to eq('smtp.example.com')
-      expect(encrypted_config.value['from_email']).to eq('ops@example.com')
+      replacement_config = GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::EMAIL_SMTP_KEY)
+      expect(replacement_config&.value&.dig('host')).to eq('smtp.example.com')
+      expect(replacement_config&.value&.dig('from_email')).to eq('ops@example.com')
     end
 
     it 'saves global SMTP settings when only MAIL_FROM is configured in the environment' do
@@ -184,16 +185,7 @@ RSpec.describe 'Encrypted settings resilience' do
                                 account:,
                                 key: EncryptedConfig::EMAIL_SMTP_KEY,
                                 value: { 'host' => 'broken.example.com' })
-      unreadable_result = EncryptedConfigValueReader::Result.new(value: nil, unreadable: true)
-      fetch_calls = 0
-
-      allow(EncryptedConfigValueReader).to receive(:fetch).and_wrap_original do |original, record, source:, key:|
-        if record == encrypted_config && key == EncryptedConfig::EMAIL_SMTP_KEY && (fetch_calls += 1) == 1
-          unreadable_result
-        else
-          original.call(record, source:, key:)
-        end
-      end
+      corrupt_encrypted_value!(encrypted_config)
 
       params = {
         encrypted_config: {
@@ -211,7 +203,7 @@ RSpec.describe 'Encrypted settings resilience' do
       }
 
       # Initial Assert
-      expect(encrypted_config.value['host']).to eq('broken.example.com')
+      expect { encrypted_config.reload.value }.to raise_error(ActiveRecord::Encryption::Errors::Decryption)
 
       # Act
       post settings_email_index_path, params: params
@@ -220,8 +212,59 @@ RSpec.describe 'Encrypted settings resilience' do
       # Assert
       expect(response).to have_http_status(:ok)
       expect(response.body).not_to include(warning_message)
-      expect(encrypted_config.reload.value['host']).to eq('smtp.example.com')
-      expect(encrypted_config.value['from_email']).to eq('ops@example.com')
+      replacement_config = EncryptedConfig.find_by(account:, key: EncryptedConfig::EMAIL_SMTP_KEY)
+      expect(replacement_config&.value&.dig('host')).to eq('smtp.example.com')
+      expect(replacement_config&.value&.dig('from_email')).to eq('ops@example.com')
+    end
+  end
+
+  describe 'GET /admin/application_settings' do
+    it 'renders the application settings page with a warning when the global config is unreadable' do
+      # Arrange
+      sign_in(platform_admin)
+      encrypted_config = create(:global_encrypted_config,
+                                key: GlobalEncryptedConfig::APP_URL_KEY,
+                                value: 'https://broken.example.com')
+      corrupt_encrypted_value!(encrypted_config)
+
+      # Initial Assert
+      expect { encrypted_config.reload.value }.to raise_error(ActiveRecord::Encryption::Errors::Decryption)
+
+      # Act
+      get admin_application_settings_path
+
+      # Assert
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('Application')
+      expect(response.body).to include(warning_message)
+      expect(response.body).to include(%(name="global_encrypted_config[value]"))
+    end
+
+    it 'overwrites an unreadable application config and clears the warning on the next load' do
+      # Arrange
+      sign_in(platform_admin)
+      encrypted_config = create(:global_encrypted_config,
+                                key: GlobalEncryptedConfig::APP_URL_KEY,
+                                value: 'https://broken.example.com')
+      corrupt_encrypted_value!(encrypted_config)
+      params = {
+        global_encrypted_config: {
+          value: 'https://docuseal.nexportsolutions.com'
+        }
+      }
+
+      # Initial Assert
+      expect { encrypted_config.reload.value }.to raise_error(ActiveRecord::Encryption::Errors::Decryption)
+
+      # Act
+      patch admin_application_settings_path, params: params
+      follow_redirect!
+
+      # Assert
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(warning_message)
+      expect(encrypted_config.class.find_by(key: GlobalEncryptedConfig::APP_URL_KEY)&.value)
+        .to eq('https://docuseal.nexportsolutions.com')
     end
   end
 
@@ -254,17 +297,8 @@ RSpec.describe 'Encrypted settings resilience' do
                                 account:,
                                 key: EncryptedConfig::ESIGN_CERTS_KEY,
                                 value: GenerateCertificate.call.transform_values(&:to_pem).stringify_keys)
-      unreadable_result = EncryptedConfigValueReader::Result.new(value: nil, unreadable: true)
-      fetch_calls = 0
       upload = build_pkcs12_upload
-
-      allow(EncryptedConfigValueReader).to receive(:fetch).and_wrap_original do |original, record, source:, key:|
-        if record == encrypted_config && key == EncryptedConfig::ESIGN_CERTS_KEY && (fetch_calls += 1) == 1
-          unreadable_result
-        else
-          original.call(record, source:, key:)
-        end
-      end
+      corrupt_encrypted_value!(encrypted_config)
 
       params = {
         esign_settings_controller_cert_form_record: {
@@ -275,7 +309,7 @@ RSpec.describe 'Encrypted settings resilience' do
       }
 
       # Initial Assert
-      expect(encrypted_config.value['cert']).to be_present
+      expect { encrypted_config.reload.value }.to raise_error(ActiveRecord::Encryption::Errors::Decryption)
 
       # Act
       post settings_esign_path, params: params
@@ -284,7 +318,8 @@ RSpec.describe 'Encrypted settings resilience' do
       # Assert
       expect(response).to have_http_status(:ok)
       expect(response.body).not_to include(warning_message)
-      expect(encrypted_config.reload.value['custom'].map { |entry| entry['name'] }).to include('Recovered Cert')
+      replacement_config = EncryptedConfig.find_by(account:, key: EncryptedConfig::ESIGN_CERTS_KEY)
+      expect(replacement_config&.value&.fetch('custom', [])&.map { |entry| entry['name'] }).to include('Recovered Cert')
     end
   end
 end
