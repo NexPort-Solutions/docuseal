@@ -32,7 +32,7 @@ class UploadSpreadsheetsController < ApplicationController
     spreadsheet =
       case extension
       when '.csv'
-        [['Sheet1', compact_rows(CSV.parse(file.read, encoding: 'bom|utf-8'))]]
+        [['Sheet1', compact_rows(CSV.parse(read_csv_contents(file)))]]
       when '.xlsx'
         workbook_to_json(RubyXL::Parser.parse_buffer(file.read))
       else
@@ -65,6 +65,10 @@ class UploadSpreadsheetsController < ApplicationController
 
   def compact_rows(rows)
     rows.reject { |row| Array.wrap(row).all? { |value| value.nil? || value == '' } }
+  end
+
+  def read_csv_contents(file)
+    file.read.to_s.encode('UTF-8', invalid: :replace, undef: :replace).sub(/\A\uFEFF/, '')
   end
 
   def serialize_cell(cell)

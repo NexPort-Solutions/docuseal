@@ -11,10 +11,9 @@ RSpec.describe 'Template folder management' do
     expect(folder.deletable?).to be(true)
 
     # Act
-    visit folder_path(folder)
-    find("a[href='#{edit_folder_path(folder)}']").click
+    visit edit_folder_path(folder)
 
-    within '#modal' do
+    within(all('#modal', visible: true).last) do
       accept_confirm do
         click_button I18n.t('delete_folder')
       end
@@ -37,10 +36,9 @@ RSpec.describe 'Template folder management' do
     expect(folder.templates.count).to eq(1)
 
     # Act
-    visit folder_path(folder)
-    find("a[href='#{edit_folder_path(folder)}']").click
+    visit edit_folder_path(folder)
 
-    within '#modal' do
+    within(all('#modal', visible: true).last) do
       accept_confirm do
         click_button I18n.t('delete_folder')
       end

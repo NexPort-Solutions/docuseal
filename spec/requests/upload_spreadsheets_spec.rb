@@ -19,7 +19,7 @@ RSpec.describe 'Upload spreadsheets' do
                                            ['Sheet1', [['Email', 'Name'], ['john.doe@example.com', 'John Doe']]]
                                          ])
     ensure
-      tempfile.close!
+      cleanup_tempfile(tempfile)
     end
 
     it 'accepts xlsx files and returns the expected sheet payload' do
@@ -44,7 +44,7 @@ RSpec.describe 'Upload spreadsheets' do
                                              ['john.doe@example.com', 'John Doe', 'John']]]
                                          ])
     ensure
-      tempfile.close!
+      cleanup_tempfile(tempfile)
     end
 
     it 'rejects unsupported file types cleanly' do
@@ -63,7 +63,7 @@ RSpec.describe 'Upload spreadsheets' do
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body).to eq({ 'error' => I18n.t('invalid_file_type') })
     ensure
-      tempfile.close!
+      cleanup_tempfile(tempfile)
     end
 
     it 'rejects invalid spreadsheet files cleanly' do
@@ -85,7 +85,7 @@ RSpec.describe 'Upload spreadsheets' do
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body).to eq({ 'error' => I18n.t('unable_to_read_spreadsheet') })
     ensure
-      tempfile.close!
+      cleanup_tempfile(tempfile)
     end
   end
 
@@ -119,5 +119,11 @@ RSpec.describe 'Upload spreadsheets' do
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       )
     ]
+  end
+
+  def cleanup_tempfile(tempfile)
+    path = tempfile.path
+    tempfile.close
+    File.delete(path) if File.exist?(path)
   end
 end

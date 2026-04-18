@@ -18,7 +18,7 @@ RSpec.describe 'Template submission upload list' do
     choose('option_list', allow_label_click: true)
     expect(page).not_to have_content('This feature will be available in a future release for this deployment.')
 
-    attach_file('import_list_file', csv_file.path, make_visible: true)
+    find('#import_list_file', visible: false).attach_file(csv_file.path)
     expect(page).to have_content('Total entries: 2')
 
     click_button I18n.t('add_recipients')

@@ -42,15 +42,30 @@ module ActionMailerConfigsInterceptor
   def apply_from_address(message, from)
     return if from.blank?
 
-    current_from = message[:from].to_s
+    current_from = message[:from]
+    current_from_value = current_from.to_s
+    current_email = Array.wrap(message.from).first.to_s
+    current_display_name = parsed_display_name(current_from_value)
 
-    if from.match?(User::FULL_EMAIL_REGEXP)
+    if from.include?('<') && from.include?('>')
       message[:from] = from
-    elsif current_from.match?(User::EMAIL_REGEXP)
-      message[:from] = current_from.sub(User::EMAIL_REGEXP, from)
+    elsif current_display_name.present? && from.match?(User::EMAIL_REGEXP)
+      message.from = formatted_from_address(current_display_name, from)
+    elsif current_email.match?(User::EMAIL_REGEXP)
+      message[:from] = current_email.sub(User::EMAIL_REGEXP, from)
     else
       message.from = from
     end
+  end
+
+  def formatted_from_address(display_name, email)
+    Mail::Address.new(email).tap { |address| address.display_name = display_name }.format
+  end
+
+  def parsed_display_name(from)
+    return if from.blank? || !from.include?('<')
+
+    from.sub(/\s*<.*\z/, '').delete_prefix('"').delete_suffix('"').strip.presence
   end
 
   def build_smtp_configs_hash(email_configs)

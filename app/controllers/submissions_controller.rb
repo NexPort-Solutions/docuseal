@@ -95,7 +95,7 @@ class SubmissionsController < ApplicationController
   end
 
   def create_submissions_from_json(template, params)
-    submissions_attrs = JSON.parse(params[:submissions_json]).map(&:deep_symbolize_keys)
+    submissions_attrs = deep_with_indifferent_access(JSON.parse(params[:submissions_json]))
 
     create_submissions_from_attrs(template, submissions_attrs, params)
   end
@@ -125,6 +125,19 @@ class SubmissionsController < ApplicationController
   end
 
   def load_template
-    @template = Template.accessible_by(current_ability).find(params[:template_id])
+    @template = current_account.templates.find(params[:template_id])
+  end
+
+  def deep_with_indifferent_access(value)
+    case value
+    when Array
+      value.map { |item| deep_with_indifferent_access(item) }
+    when Hash
+      value.each_with_object({}.with_indifferent_access) do |(key, nested_value), hash|
+        hash[key] = deep_with_indifferent_access(nested_value)
+      end
+    else
+      value
+    end
   end
 end
