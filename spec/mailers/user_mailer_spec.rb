@@ -121,9 +121,10 @@ RSpec.describe UserMailer do
       expect(mail[:from].display_names).to eq(['Northwind Notifications'])
     ensure
       Rails.application.config.action_mailer.delivery_method = original_delivery_method
+      Rails.application.config.action_mailer.smtp_settings = nil
     end
 
-    it 'falls back to MAIL_FROM when SMTP_FROM is not configured' do
+    it 'uses global SMTP settings before env SMTP settings when both exist' do
       # Arrange
       original_delivery_method = Rails.application.config.action_mailer.delivery_method
       account = create(:account)
@@ -135,12 +136,26 @@ RSpec.describe UserMailer do
                'sender_name' => 'Northwind Notifications',
                'support_email' => 'support@northwind.example'
              })
+      create(:global_encrypted_config,
+             key: GlobalEncryptedConfig::EMAIL_SMTP_KEY,
+             value: {
+               'from_email' => 'smtp@delivery.example',
+               'host' => 'smtp.example.com',
+               'port' => 587,
+               'username' => 'mailer',
+               'password' => 'secret'
+             })
       user = create(:user, account:, email: 'invitee@example.com')
       allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new('production'))
       Rails.application.config.action_mailer.delivery_method = :smtp
+      Rails.application.config.action_mailer.smtp_settings = {
+        address: 'env-smtp.example.com',
+        port: 587,
+        authentication: 'login'
+      }
       allow(ENV).to receive(:[]).and_call_original
-      allow(ENV).to receive(:[]).with('SMTP_FROM').and_return(nil)
-      allow(ENV).to receive(:[]).with('MAIL_FROM').and_return('smtp@delivery.example')
+      allow(ENV).to receive(:[]).with('SMTP_FROM').and_return('env@delivery.example')
+      allow(ENV).to receive(:[]).with('MAIL_FROM').and_return('fallback@delivery.example')
 
       # Initial Assert
       expect(account.sender_name).to eq('Northwind Notifications')
@@ -152,11 +167,13 @@ RSpec.describe UserMailer do
       # Assert
       expect(mail.from).to eq(['smtp@delivery.example'])
       expect(mail[:from].display_names).to eq(['Northwind Notifications'])
+      expect(mail.delivery_method.settings[:address]).to eq('smtp.example.com')
     ensure
       Rails.application.config.action_mailer.delivery_method = original_delivery_method
+      Rails.application.config.action_mailer.smtp_settings = nil
     end
 
-    it 'keeps the existing sender when no SMTP from env var is configured' do
+    it 'falls back to env SMTP settings when no global SMTP config exists' do
       # Arrange
       original_delivery_method = Rails.application.config.action_mailer.delivery_method
       account = create(:account)
@@ -171,8 +188,50 @@ RSpec.describe UserMailer do
       user = create(:user, account:, email: 'invitee@example.com')
       allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new('production'))
       Rails.application.config.action_mailer.delivery_method = :smtp
+      Rails.application.config.action_mailer.smtp_settings = {
+        address: 'env-smtp.example.com',
+        port: 587,
+        authentication: 'plain'
+      }
       allow(ENV).to receive(:[]).and_call_original
       allow(ENV).to receive(:[]).with('SMTP_FROM').and_return(nil)
+      allow(ENV).to receive(:[]).with('MAIL_FROM').and_return('env@delivery.example')
+
+      # Act
+      mail = described_class.invitation_email(user)
+      ActionMailerConfigsInterceptor.delivering_email(mail)
+
+      # Assert
+      expect(mail.from).to eq(['env@delivery.example'])
+      expect(mail[:from].display_names).to eq(['Northwind Notifications'])
+      expect(mail.delivery_method.settings[:address]).to eq('env-smtp.example.com')
+    ensure
+      Rails.application.config.action_mailer.delivery_method = original_delivery_method
+      Rails.application.config.action_mailer.smtp_settings = nil
+    end
+
+    it 'ignores unresolved key vault env SMTP settings when choosing fallback delivery' do
+      # Arrange
+      original_delivery_method = Rails.application.config.action_mailer.delivery_method
+      account = create(:account)
+      create(:account_config,
+             account:,
+             key: AccountConfig::BRANDING_SETTINGS_KEY,
+             value: {
+               'display_name' => 'Northwind Health',
+               'sender_name' => 'Northwind Notifications',
+               'support_email' => 'support@northwind.example'
+             })
+      user = create(:user, account:, email: 'invitee@example.com')
+      allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new('production'))
+      Rails.application.config.action_mailer.delivery_method = :smtp
+      Rails.application.config.action_mailer.smtp_settings = {
+        address: '@Microsoft.KeyVault(SecretUri=https://vault/secrets/smtp-address/)',
+        port: 587,
+        authentication: '@Microsoft.KeyVault(SecretUri=https://vault/secrets/smtp-authentication/)'
+      }
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with('SMTP_FROM').and_return('@Microsoft.KeyVault(SecretUri=https://vault/secrets/mail-from/)')
       allow(ENV).to receive(:[]).with('MAIL_FROM').and_return(nil)
 
       # Act
@@ -184,6 +243,7 @@ RSpec.describe UserMailer do
       expect(mail[:from].display_names).to eq(['Northwind Notifications'])
     ensure
       Rails.application.config.action_mailer.delivery_method = original_delivery_method
+      Rails.application.config.action_mailer.smtp_settings = nil
     end
   end
 end

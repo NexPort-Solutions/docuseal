@@ -14,7 +14,7 @@ module Admin
       @encrypted_config = recover_unreadable_encrypted_config(@encrypted_config, unreadable: @config_unreadable)
 
       if @encrypted_config.update(email_configs)
-        SettingsMailer.smtp_successful_setup(@encrypted_config.value['from_email'] || current_user.email).deliver_now!
+        send_smtp_confirmation!(@encrypted_config.value)
 
         redirect_to admin_email_index_path, notice: I18n.t('changes_have_been_saved')
       else
@@ -50,6 +50,15 @@ module Admin
 
       flash.now[:alert] = I18n.t('stored_settings_are_unreadable_reenter_and_save',
                                  default: 'Stored settings could not be read. Re-enter them and save again.')
+    end
+
+    def send_smtp_confirmation!(smtp_value)
+      delivery = SettingsMailer.smtp_successful_setup(smtp_value['from_email'] || current_user.email)
+      message = delivery.message
+      message.instance_variable_set(ActionMailerConfigsInterceptor::SMTP_SETTINGS_MESSAGE_IVAR,
+                                    ActionMailerConfigsInterceptor.build_smtp_configs_hash(smtp_value))
+      message.instance_variable_set(ActionMailerConfigsInterceptor::SMTP_FROM_MESSAGE_IVAR, smtp_value['from_email'])
+      message.deliver!
     end
   end
 end

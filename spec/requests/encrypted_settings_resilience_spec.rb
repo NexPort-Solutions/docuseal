@@ -115,16 +115,29 @@ RSpec.describe 'Encrypted settings resilience' do
       expect(replacement_config&.value&.dig('from_email')).to eq('ops@example.com')
     end
 
-    it 'saves global SMTP settings when only MAIL_FROM is configured in the environment' do
+    it 'saves global SMTP settings when env SMTP fallback is unresolved' do
       # Arrange
       sign_in(platform_admin)
       original_delivery_method = Rails.application.config.action_mailer.delivery_method
-      ActionMailer::Base.deliveries.clear
+      original_smtp_settings = Rails.application.config.action_mailer.smtp_settings
       allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new('production'))
-      Rails.application.config.action_mailer.delivery_method = :test
+      Rails.application.config.action_mailer.delivery_method = :smtp
+      Rails.application.config.action_mailer.smtp_settings = {
+        address: '@Microsoft.KeyVault(SecretUri=https://docusealprd-kv.vault.azure.net/secrets/smtp-address/)',
+        port: '@Microsoft.KeyVault(SecretUri=https://docusealprd-kv.vault.azure.net/secrets/smtp-port/)',
+        authentication: '@Microsoft.KeyVault(SecretUri=https://docusealprd-kv.vault.azure.net/secrets/smtp-authentication/)'
+      }
       allow(ENV).to receive(:[]).and_call_original
-      allow(ENV).to receive(:[]).with('SMTP_FROM').and_return(nil)
-      allow(ENV).to receive(:[]).with('MAIL_FROM').and_return('ops@example.com')
+      allow(ENV).to receive(:[]).with('SMTP_FROM')
+        .and_return('@Microsoft.KeyVault(SecretUri=https://docusealprd-kv.vault.azure.net/secrets/mail-from/)')
+      allow(ENV).to receive(:[]).with('MAIL_FROM').and_return(nil)
+      allow(Mail::SMTP).to receive(:new).and_wrap_original do |original, values|
+        expect(values[:address]).to eq('smtp.example.com')
+        expect(values[:port].to_i).to eq(587)
+        delivery = original.call(values)
+        allow(delivery).to receive(:deliver!).and_return(true)
+        delivery
+      end
 
       params = {
         global_encrypted_config: {
@@ -151,70 +164,10 @@ RSpec.describe 'Encrypted settings resilience' do
       expect(response).to redirect_to(admin_email_index_path)
       expect(flash[:notice]).to eq(I18n.t('changes_have_been_saved'))
       expect(GlobalEncryptedConfig.find_by(key: GlobalEncryptedConfig::EMAIL_SMTP_KEY)&.value&.dig('host')).to eq('smtp.example.com')
-      expect(ActionMailer::Base.deliveries.last&.from).to eq(['ops@example.com'])
+      expect(Mail::SMTP).to have_received(:new)
     ensure
       Rails.application.config.action_mailer.delivery_method = original_delivery_method
-    end
-  end
-
-  describe 'GET /settings/email' do
-    it 'renders the account SMTP page with a warning when the account config is unreadable' do
-      # Arrange
-      sign_in(user)
-      stub_undecryptable_account_config(account:,
-                                        key: EncryptedConfig::EMAIL_SMTP_KEY,
-                                        value: { 'host' => 'smtp.example.com' })
-
-      # Initial Assert
-      expect(EncryptedConfig.find_by(account:, key: EncryptedConfig::EMAIL_SMTP_KEY)).to be_present
-
-      # Act
-      get settings_email_index_path
-
-      # Assert
-      expect(response).to have_http_status(:ok)
-      expect(response.body).to include('Email SMTP')
-      expect(response.body).to include(warning_message)
-      expect(response.body).to include(%(name="encrypted_config[value][host]"))
-    end
-
-    it 'overwrites an unreadable account SMTP config and clears the warning on the next load' do
-      # Arrange
-      sign_in(user)
-      encrypted_config = create(:encrypted_config,
-                                account:,
-                                key: EncryptedConfig::EMAIL_SMTP_KEY,
-                                value: { 'host' => 'broken.example.com' })
-      corrupt_encrypted_value!(encrypted_config)
-
-      params = {
-        encrypted_config: {
-          value: {
-            host: 'smtp.example.com',
-            port: '587',
-            username: 'ops@example.com',
-            password: 'new-password',
-            domain: 'example.com',
-            authentication: 'plain',
-            security: 'tls',
-            from_email: 'ops@example.com'
-          }
-        }
-      }
-
-      # Initial Assert
-      expect { encrypted_config.reload.value }.to raise_error(ActiveRecord::Encryption::Errors::Decryption)
-
-      # Act
-      post settings_email_index_path, params: params
-      follow_redirect!
-
-      # Assert
-      expect(response).to have_http_status(:ok)
-      expect(response.body).not_to include(warning_message)
-      replacement_config = EncryptedConfig.find_by(account:, key: EncryptedConfig::EMAIL_SMTP_KEY)
-      expect(replacement_config&.value&.dig('host')).to eq('smtp.example.com')
-      expect(replacement_config&.value&.dig('from_email')).to eq('ops@example.com')
+      Rails.application.config.action_mailer.smtp_settings = original_smtp_settings
     end
   end
 

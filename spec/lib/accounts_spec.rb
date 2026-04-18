@@ -88,4 +88,41 @@ RSpec.describe Accounts do
       expect(trusted_certs.map(&:to_der)).to include(expected_pkcs.certificate.to_der)
     end
   end
+
+  describe '.can_send_emails?' do
+    around do |example|
+      original_delivery_method = Rails.application.config.action_mailer.delivery_method
+      original_smtp_settings = Rails.application.config.action_mailer.smtp_settings
+
+      example.run
+    ensure
+      Rails.application.config.action_mailer.delivery_method = original_delivery_method
+      Rails.application.config.action_mailer.smtp_settings = original_smtp_settings
+    end
+
+    it 'returns true when global SMTP settings exist' do
+      create(:global_encrypted_config,
+             key: GlobalEncryptedConfig::EMAIL_SMTP_KEY,
+             value: { 'host' => 'smtp.example.com', 'port' => 587 })
+
+      expect(described_class.can_send_emails?(account)).to be(true)
+    end
+
+    it 'returns true when env SMTP fallback is usable' do
+      Rails.application.config.action_mailer.delivery_method = :smtp
+      Rails.application.config.action_mailer.smtp_settings = { address: 'smtp.example.com', port: 587 }
+
+      expect(described_class.can_send_emails?(account)).to be(true)
+    end
+
+    it 'returns false when env SMTP fallback only contains unresolved key vault references' do
+      Rails.application.config.action_mailer.delivery_method = :smtp
+      Rails.application.config.action_mailer.smtp_settings = {
+        address: '@Microsoft.KeyVault(SecretUri=https://vault/secrets/smtp-address/)',
+        port: 587
+      }
+
+      expect(described_class.can_send_emails?(account)).to be(false)
+    end
+  end
 end

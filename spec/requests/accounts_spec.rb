@@ -99,4 +99,30 @@ RSpec.describe 'Accounts' do
       expect(flash[:alert]).to eq(I18n.t('sms_delivery_is_not_enabled_for_this_deployment'))
     end
   end
+
+  describe 'GET /settings/email' do
+    it 'returns not found' do
+      sign_in(account_admin)
+
+      get settings_email_index_path
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
+  describe 'POST /settings/email' do
+    it 'returns not found' do
+      sign_in(account_admin)
+
+      post settings_email_index_path, params: {
+        encrypted_config: {
+          value: {
+            host: 'smtp.example.com'
+          }
+        }
+      }
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
 end

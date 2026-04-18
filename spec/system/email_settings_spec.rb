@@ -4,6 +4,16 @@ RSpec.describe 'Email Settings' do
   let!(:account) { create(:account) }
   let!(:user) { create(:user, account:, role: User::PLATFORM_ADMIN_ROLE) }
 
+  around do |example|
+    original_delivery_method = Rails.application.config.action_mailer.delivery_method
+    original_smtp_settings = Rails.application.config.action_mailer.smtp_settings
+
+    example.run
+  ensure
+    Rails.application.config.action_mailer.delivery_method = original_delivery_method
+    Rails.application.config.action_mailer.smtp_settings = original_smtp_settings
+  end
+
   before do
     sign_in(user)
   end
@@ -90,6 +100,40 @@ RSpec.describe 'Email Settings' do
       expect(encrypted_config.value['authentication']).to eq('plain')
       expect(encrypted_config.value['security']).to eq('ssl')
       expect(encrypted_config.value['from_email']).to eq('user@gmail.com')
+    end
+
+    it 'saves global SMTP settings when env SMTP fallback is misconfigured' do
+      allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new('production'))
+      Rails.application.config.action_mailer.delivery_method = :smtp
+      Rails.application.config.action_mailer.smtp_settings = {
+        address: '@Microsoft.KeyVault(SecretUri=https://docusealprd-kv.vault.azure.net/secrets/smtp-address/)',
+        port: '@Microsoft.KeyVault(SecretUri=https://docusealprd-kv.vault.azure.net/secrets/smtp-port/)',
+        authentication: '@Microsoft.KeyVault(SecretUri=https://docusealprd-kv.vault.azure.net/secrets/smtp-authentication/)'
+      }
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with('SMTP_FROM')
+        .and_return('@Microsoft.KeyVault(SecretUri=https://docusealprd-kv.vault.azure.net/secrets/mail-from/)')
+      allow(ENV).to receive(:[]).with('MAIL_FROM').and_return(nil)
+      allow(Mail::SMTP).to receive(:new).and_wrap_original do |original, values|
+        delivery = original.call(values)
+        allow(delivery).to receive(:deliver!).and_return(true)
+        delivery
+      end
+
+      fill_in 'Host', with: 'smtp.gmail.com'
+      fill_in 'Port', with: '465'
+      fill_in 'Username', with: 'user@gmail.com'
+      fill_in 'Password', with: 'new_password'
+      fill_in 'Domain', with: 'gmail.com'
+      fill_in 'Send from Email', with: 'user@gmail.com'
+      select 'Plain', from: 'Authentication'
+      choose 'SSL'
+
+      click_button 'Save'
+
+      expect(page).to have_current_path(admin_email_index_path, ignore_query: true)
+      expect(page).to have_content('Changes have been saved')
+      expect(encrypted_config.reload.value['host']).to eq('smtp.gmail.com')
     end
   end
 end
