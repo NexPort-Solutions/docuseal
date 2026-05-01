@@ -96,11 +96,14 @@ RUN chmod +x ./bin/* && \
     mkdir -p /app/tmp/cache && \
     ln -s /fonts /app/public/fonts && \
     bundle exec bootsnap precompile -j 1 --gemfile app/ lib/ && \
-    chown -R docuseal:docuseal /app/tmp/cache
+    chown -R docuseal:docuseal /app/tmp/cache && \
+    mkdir -p /data/docuseal && \
+    chown -R docuseal:docuseal /data/docuseal
 
 WORKDIR /data/docuseal
 ENV HOME=/home/docuseal
 ENV WORKDIR=/data/docuseal
 
 EXPOSE 3000
+USER docuseal
 CMD ["/app/bin/bundle", "exec", "puma", "-C", "/app/config/puma.rb", "--dir", "/app"]
