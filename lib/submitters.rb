@@ -27,7 +27,7 @@ module Submitters
 
   module_function
 
-  def search(current_user, current_account, submitters, keyword)
+  def search(_current_user, current_account, submitters, keyword)
     if Docuseal.fulltext_search?
       fulltext_search(current_account, submitters, keyword)
     else
