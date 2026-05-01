@@ -23,55 +23,75 @@ class GoogleOidcAuthenticator
     return Result.new(error: I18n.t('google_workspace_sign_in_failed')) if email.blank?
     return Result.new(error: I18n.t('google_email_must_be_verified')) unless @auth.dig('info', 'email_verified')
 
-    account = resolve_account(email)
-    return Result.new(error: I18n.t('unable_to_match_google_account_to_a_division')) unless account
-    role = account.google_oidc_role_for(email)
-    return Result.new(error: I18n.t('google_account_is_not_allowed_for_this_division')) unless role
+    matching_accounts = resolve_matching_accounts(email)
+    return Result.new(error: I18n.t('unable_to_match_google_account_to_a_division')) if matching_accounts.blank?
 
-    user = User.find_by(email:)
-    new_user = user.nil?
+    user, new_user = find_or_build_user(email, matching_accounts)
 
-    if new_user
-      user = account.users.new(
-        email:,
-        first_name: @auth.dig('info', 'first_name').presence || @auth.dig('info', 'name').to_s.split.first,
-        last_name: @auth.dig('info', 'last_name').presence || @auth.dig('info', 'name').to_s.split.drop(1).join(' '),
-        password: SecureRandom.hex
-      )
+    ApplicationRecord.transaction do
+      persist_google_identity!(user)
+      provision_memberships!(user, matching_accounts, new_user:)
+      user.sync_membership_state!
     end
-
-    return Result.new(error: I18n.t('google_account_is_not_allowed_for_this_division')) unless account_user_allowed?(account, email, user)
-
-    user.provider = @auth['provider']
-    user.uid = @auth['uid']
-    user.archived_at = nil
-    user.save!
-    membership = user.account_accesses.find_or_initialize_by(account:)
-    membership.role = role if new_user || membership.new_record? || membership.role.blank?
-    membership.save!
-    user.sync_membership_state!
 
     Result.new(user:)
   end
 
   private
 
-  def resolve_account(email)
-    if @hinted_account_id.present?
-      account = Account.find_by(id: @hinted_account_id)
-      return account if account&.google_oidc_enabled? && account.google_oidc_match?(email)
+  def find_or_build_user(email, matching_accounts)
+    user = User.find_by(email:)
+    return [user, false] if user
 
-      return nil
-    end
+    primary_account = primary_account_for(nil, matching_accounts)
+    user = primary_account.users.new(
+      email:,
+      first_name: @auth.dig('info', 'first_name').presence || @auth.dig('info', 'name').to_s.split.first,
+      last_name: @auth.dig('info', 'last_name').presence || @auth.dig('info', 'name').to_s.split.drop(1).join(' '),
+      password: SecureRandom.hex
+    )
 
-    matching_accounts = Account.active.select(&:google_oidc_enabled?).select { |account| account.google_oidc_match?(email) }
-
-    matching_accounts.one? ? matching_accounts.first : nil
+    [user, true]
   end
 
-  def account_user_allowed?(account, email, user)
-    return true if user.platform_admin?
+  def persist_google_identity!(user)
+    user.provider = @auth['provider']
+    user.uid = @auth['uid']
+    user.archived_at = nil
+    user.save!
+  end
 
-    user.can_access_account?(account) || account.google_oidc_match?(email)
+  def resolve_matching_accounts(email)
+    matching_accounts = Account.active
+                               .select(&:google_oidc_enabled?)
+                               .select { |account| account.google_oidc_match?(email) }
+
+    if @hinted_account_id.present?
+      hinted_account = matching_accounts.find { |account| account.id.to_s == @hinted_account_id.to_s }
+      return [] unless hinted_account
+
+      return matching_accounts
+    end
+
+    matching_accounts
+  end
+
+  def primary_account_for(user, matching_accounts)
+    hinted_account = matching_accounts.find { |account| account.id.to_s == @hinted_account_id.to_s }
+    return hinted_account if hinted_account
+
+    current_account = matching_accounts.find { |account| account.id == user&.account_id }
+    current_account || matching_accounts.first
+  end
+
+  def provision_memberships!(user, matching_accounts, new_user:)
+    matching_accounts.each do |account|
+      role = account.google_oidc_role_for(user.email)
+      next unless role
+
+      membership = user.account_accesses.find_or_initialize_by(account:)
+      membership.role = role if new_user || membership.new_record? || membership.role.blank?
+      membership.save!
+    end
   end
 end
