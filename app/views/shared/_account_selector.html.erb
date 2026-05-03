@@ -1,9 +1,11 @@
 <% return unless signed_in? && accessible_accounts.many? %>
 
-<div class="dropdown dropdown-end">
-  <label tabindex="0" class="btn btn-outline btn-sm gap-2 normal-case">
-    <%= svg_icon('folder', class: 'w-4 h-4') %>
-    <span class="max-w-44 truncate"><%= current_account&.branded_name || t('accounts') %></span>
+<% account_selector_label = current_account&.branded_name || t('accounts') %>
+
+<div class="dropdown dropdown-end min-w-0">
+  <label tabindex="0" class="btn btn-outline btn-sm gap-2 normal-case min-w-0 max-w-52 md:max-w-xs" title="<%= account_selector_label %>">
+    <%= svg_icon('folder', class: 'w-4 h-4 shrink-0') %>
+    <span class="block min-w-0 flex-1 truncate text-left"><%= account_selector_label %></span>
   </label>
   <ul tabindex="0" class="dropdown-content z-20 menu p-2 shadow bg-base-100 rounded-box w-72">
     <li class="menu-title"><span><%= t('accounts') %></span></li>

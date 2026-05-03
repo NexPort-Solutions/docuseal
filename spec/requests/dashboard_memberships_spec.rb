@@ -27,6 +27,10 @@ RSpec.describe 'Dashboard memberships' do
       expect(response.body).to include('Accounts')
       expect(response.body).to include('Northwind')
       expect(response.body).to include('Contoso')
+      expect(response.body).to include('Home')
+      expect(response.body).to include('Templates')
+      expect(response.body).to include('Settings')
+      expect(response.body).not_to include('Open Workspace')
     end
   end
 

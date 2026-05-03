@@ -1,0 +1,22 @@
+<div class="dropdown dropdown-end">
+  <label tabindex="0" id="templates_create_button" class="white-button !border gap-2">
+    <%= svg_icon('plus', class: 'w-6 h-6 stroke-2') %>
+    <span class="hidden md:block"><%= t('create') %></span>
+  </label>
+  <ul tabindex="0" class="dropdown-content z-20 menu p-2 mt-2 shadow bg-base-100 rounded-box w-56">
+    <li>
+      <%= link_to new_template_path(folder_name: local_assigns[:folder_name]), data: { turbo_frame: :modal }, class: 'flex items-center gap-2' do %>
+        <%= svg_icon('file_text', class: 'w-5 h-5 stroke-2') %>
+        <span><%= t('new_template', default: 'New Template') %></span>
+      <% end %>
+    </li>
+    <% if local_assigns.fetch(:can_create_folder, true) %>
+      <li>
+        <%= link_to new_folder_path(parent_folder_id: local_assigns[:parent_folder]&.id), data: { turbo_frame: :modal }, class: 'flex items-center gap-2' do %>
+          <%= svg_icon('folder_plus', class: 'w-5 h-5 stroke-2') %>
+          <span><%= t('new_folder', default: 'New Folder') %></span>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+</div>

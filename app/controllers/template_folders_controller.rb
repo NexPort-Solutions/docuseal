@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class TemplateFoldersController < ApplicationController
-  load_and_authorize_resource :template_folder
+  load_and_authorize_resource :template_folder, except: %i[new create]
 
   helper_method :selected_order
 
@@ -45,6 +45,28 @@ class TemplateFoldersController < ApplicationController
 
   def edit; end
 
+  def new
+    @parent_folder = parent_folder
+    authorize_folder_create!(@parent_folder)
+    @template_folder = current_account.template_folders.new(parent_folder: @parent_folder)
+  end
+
+  def create
+    @parent_folder = parent_folder
+    authorize_folder_create!(@parent_folder)
+
+    @template_folder = current_account.template_folders
+                                      .create_with(author: current_user)
+                                      .find_or_create_by(template_folder_params.merge(parent_folder: @parent_folder))
+
+    if @template_folder.persisted?
+      redirect_to(@parent_folder ? folder_path(@parent_folder) : templates_path,
+                  notice: I18n.t('folder_has_been_created', default: 'Folder has been created.'))
+    else
+      render :new, status: :unprocessable_content
+    end
+  end
+
   def update
     if @template_folder != current_account.default_template_folder &&
        @template_folder.update(template_folder_params)
@@ -82,6 +104,20 @@ class TemplateFoldersController < ApplicationController
 
   def template_folder_params
     params.require(:template_folder).permit(:name)
+  end
+
+  def parent_folder
+    return if params[:parent_folder_id].blank?
+
+    current_account.template_folders.find(params[:parent_folder_id])
+  end
+
+  def authorize_folder_create!(parent_folder)
+    authorization_folder = parent_folder || current_account.default_template_folder
+
+    authorize!(:create, Template)
+
+    raise CanCan::AccessDenied unless can_create_template_in_folder?(authorization_folder)
   end
 
   def load_related_submissions

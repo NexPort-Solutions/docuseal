@@ -1,6 +1,28 @@
 # frozen_string_literal: true
 
 RSpec.describe 'Template folders' do
+  describe 'GET /templates' do
+    it 'shows create menu actions for templates and folders' do
+      # Arrange
+      user = create(:user)
+      sign_in(user)
+
+      # Initial Assert
+      expect(user.account.default_template_folder).to be_present
+
+      # Act
+      get templates_path
+
+      # Assert
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('templates_create_button')
+      expect(response.body).to include(new_template_path)
+      expect(response.body).to include(new_folder_path)
+      expect(response.body).to include('New Template')
+      expect(response.body).to include('New Folder')
+    end
+  end
+
   describe 'GET /folders/:id' do
     it 'links the top-level folder breadcrumb back to templates' do
       # Arrange
@@ -32,6 +54,62 @@ RSpec.describe 'Template folders' do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(%(href="#{folder_path(parent_folder)}"))
       expect(response.body).to include('Parent Folder')
+    end
+  end
+
+  describe 'GET /folders/new' do
+    it 'renders the new folder modal' do
+      # Arrange
+      user = create(:user)
+      sign_in(user)
+
+      # Initial Assert
+      expect(user.account.default_template_folder).to be_present
+
+      # Act
+      get new_folder_path
+
+      # Assert
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('New Folder')
+      expect(response.body).to include('template_folder[name]')
+    end
+  end
+
+  describe 'POST /folders' do
+    it 'creates a root folder and redirects to templates' do
+      # Arrange
+      user = create(:user)
+      sign_in(user)
+
+      # Initial Assert
+      expect(user.account.template_folders.find_by(name: 'Client Docs', parent_folder: nil)).to be_nil
+
+      # Act
+      post folders_path, params: { template_folder: { name: 'Client Docs' } }
+
+      # Assert
+      expect(response).to redirect_to(templates_path)
+      folder = user.account.template_folders.find_by!(name: 'Client Docs', parent_folder: nil)
+      expect(folder.author).to eq(user)
+    end
+
+    it 'creates a child folder in the current folder and redirects back to the parent' do
+      # Arrange
+      user = create(:user)
+      parent_folder = create(:template_folder, account: user.account, author: user, name: 'Parent Folder')
+      sign_in(user)
+
+      # Initial Assert
+      expect(parent_folder.subfolders.find_by(name: 'Child Folder')).to be_nil
+
+      # Act
+      post folders_path, params: { parent_folder_id: parent_folder.id, template_folder: { name: 'Child Folder' } }
+
+      # Assert
+      expect(response).to redirect_to(folder_path(parent_folder))
+      folder = parent_folder.subfolders.find_by!(name: 'Child Folder')
+      expect(folder.author).to eq(user)
     end
   end
 

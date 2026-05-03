@@ -99,7 +99,7 @@ Rails.application.routes.draw do
     resource :templates_upload, only: %i[show], path: 'new'
   end
   resources :templates_archived, only: %i[index], path: 'templates/archived'
-  resources :folders, only: %i[show edit update destroy], controller: 'template_folders'
+  resources :folders, only: %i[show new create edit update destroy], controller: 'template_folders'
   resources :template_sharings_testing, only: %i[create]
   resources :templates, only: %i[index], controller: 'templates_dashboard'
   resources :submissions_filters, only: %i[show], param: 'name'
