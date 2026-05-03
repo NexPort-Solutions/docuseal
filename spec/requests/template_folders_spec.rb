@@ -18,6 +18,7 @@ RSpec.describe 'Template folders' do
       expect(response.body).to include('templates_create_button')
       expect(response.body).to include(new_template_path)
       expect(response.body).to include(new_folder_path)
+      expect(response.body).to include("account_id=#{user.account.id}")
       expect(response.body).to include('New Template')
       expect(response.body).to include('New Folder')
     end
@@ -74,6 +75,27 @@ RSpec.describe 'Template folders' do
       expect(response.body).to include('New Folder')
       expect(response.body).to include('template_folder[name]')
     end
+
+    it 'renders the modal for a folder in the requested accessible account' do
+      # Arrange
+      user = create(:user)
+      secondary_account = create(:account)
+      user.account_accesses.create!(account: secondary_account, role: AccountAccess::ACCOUNT_ADMIN_ROLE)
+      parent_folder = create(:template_folder, account: secondary_account, author: user, name: 'Secondary Folder')
+      sign_in(user)
+
+      # Initial Assert
+      expect(user.account).not_to eq(secondary_account)
+
+      # Act
+      get new_folder_path(account_id: secondary_account.id, parent_folder_id: parent_folder.id)
+
+      # Assert
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('New Folder')
+      expect(response.body).to include(%(name="account_id" id="account_id" value="#{secondary_account.id}"))
+      expect(response.body).to include(%(name="parent_folder_id" id="parent_folder_id" value="#{parent_folder.id}"))
+    end
   end
 
   describe 'POST /folders' do
@@ -109,6 +131,32 @@ RSpec.describe 'Template folders' do
       # Assert
       expect(response).to redirect_to(folder_path(parent_folder))
       folder = parent_folder.subfolders.find_by!(name: 'Child Folder')
+      expect(folder.author).to eq(user)
+    end
+
+    it 'creates a child folder in the requested accessible account' do
+      # Arrange
+      user = create(:user)
+      secondary_account = create(:account)
+      user.account_accesses.create!(account: secondary_account, role: AccountAccess::ACCOUNT_ADMIN_ROLE)
+      parent_folder = create(:template_folder, account: secondary_account, author: user, name: 'Secondary Folder')
+      sign_in(user)
+
+      # Initial Assert
+      expect(user.account).not_to eq(secondary_account)
+      expect(parent_folder.subfolders.find_by(name: 'Requested Account Child')).to be_nil
+
+      # Act
+      post folders_path, params: {
+        account_id: secondary_account.id,
+        parent_folder_id: parent_folder.id,
+        template_folder: { name: 'Requested Account Child' }
+      }
+
+      # Assert
+      expect(response).to redirect_to(folder_path(parent_folder))
+      folder = parent_folder.subfolders.find_by!(name: 'Requested Account Child')
+      expect(folder.account).to eq(secondary_account)
       expect(folder.author).to eq(user)
     end
   end

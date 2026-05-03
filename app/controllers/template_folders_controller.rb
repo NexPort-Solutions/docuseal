@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class TemplateFoldersController < ApplicationController
+  before_action :select_requested_account!, only: %i[new create]
+
   load_and_authorize_resource :template_folder, except: %i[new create]
 
   helper_method :selected_order
@@ -110,6 +112,16 @@ class TemplateFoldersController < ApplicationController
     return if params[:parent_folder_id].blank?
 
     current_account.template_folders.find(params[:parent_folder_id])
+  end
+
+  def select_requested_account!
+    account_id = params[:account_id].presence || params.dig(:template_folder, :account_id).presence
+
+    return if account_id.blank?
+
+    account = accessible_accounts.find(account_id)
+
+    select_current_account!(account) if current_account != account
   end
 
   def authorize_folder_create!(parent_folder)

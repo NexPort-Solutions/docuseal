@@ -12,7 +12,9 @@
     </li>
     <% if local_assigns.fetch(:can_create_folder, true) %>
       <li>
-        <%= link_to new_folder_path(parent_folder_id: local_assigns[:parent_folder]&.id), data: { turbo_frame: :modal }, class: 'flex items-center gap-2' do %>
+        <%= link_to new_folder_path(account_id: local_assigns[:parent_folder]&.account_id || current_account.id,
+                                    parent_folder_id: local_assigns[:parent_folder]&.id),
+                    data: { turbo_frame: :modal }, class: 'flex items-center gap-2' do %>
           <%= svg_icon('folder_plus', class: 'w-5 h-5 stroke-2') %>
           <span><%= t('new_folder', default: 'New Folder') %></span>
         <% end %>

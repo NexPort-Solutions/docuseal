@@ -1,5 +1,6 @@
 <%= render 'shared/turbo_modal', title: t('new_folder', default: 'New Folder') do %>
   <%= form_for @template_folder, url: folders_path, data: { turbo_frame: :_top }, html: { autocomplete: :off } do |f| %>
+    <%= hidden_field_tag :account_id, current_account.id %>
     <%= hidden_field_tag :parent_folder_id, @parent_folder&.id %>
 
     <div class="form-control my-6">
