@@ -16,8 +16,7 @@ class TemplatesDashboardController < ApplicationController
     @template_folders ||= current_account.template_folders.where(id: content_scope.readable_folder_ids)
     @templates ||= current_account.templates.where(id: content_scope.readable_template_ids)
 
-    @template_folders =
-      TemplateFolders.filter_active_folders(@template_folders.where(parent_folder_id: nil), @templates)
+    @template_folders = @template_folders.where(parent_folder_id: nil)
 
     @template_folders = TemplateFolders.search(@template_folders, params[:q])
     @template_folders = TemplateFolders.sort(@template_folders, current_account:, order: selected_order)

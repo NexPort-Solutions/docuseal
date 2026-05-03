@@ -22,6 +22,23 @@ RSpec.describe 'Template folders' do
       expect(response.body).to include('New Template')
       expect(response.body).to include('New Folder')
     end
+
+    it 'shows empty root folders' do
+      # Arrange
+      user = create(:user)
+      folder = create(:template_folder, account: user.account, author: user, name: 'Empty Client Docs')
+      sign_in(user)
+
+      # Initial Assert
+      expect(folder.templates).to be_empty
+
+      # Act
+      get templates_path
+
+      # Assert
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('Empty Client Docs')
+    end
   end
 
   describe 'GET /folders/:id' do
@@ -55,6 +72,25 @@ RSpec.describe 'Template folders' do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(%(href="#{folder_path(parent_folder)}"))
       expect(response.body).to include('Parent Folder')
+    end
+
+    it 'shows empty child folders' do
+      # Arrange
+      user = create(:user)
+      parent_folder = create(:template_folder, account: user.account, author: user, name: 'Parent Folder')
+      child_folder = create(:template_folder, account: user.account, author: user,
+                                              parent_folder: parent_folder, name: 'Empty Child Folder')
+      sign_in(user)
+
+      # Initial Assert
+      expect(child_folder.templates).to be_empty
+
+      # Act
+      get folder_path(parent_folder)
+
+      # Assert
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('Empty Child Folder')
     end
   end
 

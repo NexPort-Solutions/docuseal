@@ -19,7 +19,7 @@ class TemplateFoldersController < ApplicationController
                  .preload(:author, :content_accesses, folder: :content_accesses)
 
     @template_folders =
-      @template_folder.subfolders.where(id: readable_templates.select(:folder_id))
+      current_account.template_folders.where(id: content_scope.readable_folder_ids, parent_folder: @template_folder)
 
     @template_folders = TemplateFolders.search(@template_folders, params[:q])
     @template_folders = TemplateFolders.sort(@template_folders, current_account:, order: selected_order)
