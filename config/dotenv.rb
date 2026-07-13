@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
+require_relative '../lib/persisted_secrets_guard'
+
 if ENV['RAILS_ENV'] == 'production'
+  PersistedSecretsGuard.validate!(ENV)
+
   if Process.uid.zero?
     begin
       workdir = ENV.fetch('WORKDIR', '.')
